@@ -26,12 +26,6 @@ export default function LoginPage() {
     const redirect = params.get("redirect");
     if (err) setError(err);
     if (redirect) setRedirectTo(redirect);
-
-    // Block back/forward/swipe navigation on the login screen
-    window.history.pushState(null, "", window.location.href);
-    const trap = () => window.history.pushState(null, "", window.location.href);
-    window.addEventListener("popstate", trap);
-    return () => window.removeEventListener("popstate", trap);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
