@@ -53,16 +53,19 @@ export const GET = route(async (request: NextRequest) => {
     .limit(300)
     .lean();
 
-  const offerProgression = offers.map((o) => ({
-    time: new Date((o as OfferDoc).createdAt).toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-      timeZone: "Asia/Kolkata",
-    }),
-    amount: (o as OfferDoc).amount,
-    round: (o as OfferDoc).round || 1,
-  }));
+  const offerProgression = offers.map((o) => {
+    const doc = o as unknown as OfferDoc;
+    return {
+      time: new Date(doc.createdAt).toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Asia/Kolkata",
+      }),
+      amount: doc.amount,
+      round: doc.round || 1,
+    };
+  });
 
   const paidUsers = (await User.find(
     { paidAccessAuctions: auctionId },
