@@ -36,7 +36,7 @@ export const POST = route(async (request: NextRequest) => {
     status: "PENDING",
   })
     .sort({ createdAt: -1 })
-    .lean();
+    .lean() as any;
 
   if (pendingPayment) {
     return ok({
@@ -47,7 +47,7 @@ export const POST = route(async (request: NextRequest) => {
     });
   }
 
-  const feeSetting = await Setting.findOne({ key: { $in: ["registrationFee", "registration-fee"] } }).select("value").lean();
+  const feeSetting = await Setting.findOne({ key: { $in: ["registrationFee", "registration-fee"] } }).select("value").lean() as any;
   const settingFee = feeSetting?.value ? parseInt(feeSetting.value) : NaN;
   const amount = auction.registrationFee || (!isNaN(settingFee) && settingFee > 0 ? settingFee : DEFAULT_FEE);
 

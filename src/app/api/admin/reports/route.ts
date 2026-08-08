@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     );
 
     // Estimated revenue from registration fees
-    const regFeeSetting = await Setting.findOne({ key: "registrationFee" }).lean();
+    const regFeeSetting = await Setting.findOne({ key: "registrationFee" }).lean() as any;
     const defaultRegFee = regFeeSetting ? parseInt(regFeeSetting.value || "5000") : 5000;
 
     let totalRegDepositsCollected = 0;

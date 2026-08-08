@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
     const auctions = await Auction.find({}).lean();
 
-    const regFeeSetting = await Setting.findOne({ key: "registrationFee" }).lean();
+    const regFeeSetting = await Setting.findOne({ key: "registrationFee" }).lean() as any;
     const defaultFee = regFeeSetting ? parseInt(regFeeSetting.value || "5000") : 5000;
 
     const paymentTransactions: any[] = [];
