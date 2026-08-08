@@ -1,31 +1,49 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  "mongodb+srv://Sudexhub:Sudexhub2026@cluster0.ivs0qfk.mongodb.net/ACWEB";
 
-const cached: { conn: typeof mongoose | null; promise: Promise<typeof mongoose | null> | null } = {
-  conn: null,
-  promise: null,
-};
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
 
-async function dbConnect(): Promise<typeof mongoose | null> {
-  if (cached.conn) return cached.conn;
+declare global {
+  // eslint-disable-next-line no-var
+  var mongooseCache: MongooseCache | undefined;
+}
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-    }).then((m) => m).catch((err) => {
-      console.error("MongoDB connection error:", err.message);
-      cached.promise = null;
-      return null;
-    });
+let cached = global.mongooseCache;
+
+if (!cached) {
+  cached = global.mongooseCache = { conn: null, promise: null };
+}
+
+async function dbConnect(): Promise<typeof mongoose> {
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
+  }
+
+  if (!cached.promise || mongoose.connection.readyState === 0) {
+    const opts: mongoose.ConnectOptions = {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((m) => m);
   }
 
   try {
     cached.conn = await cached.promise;
-  } catch {
+  } catch (e) {
+    cached.promise = null;
     cached.conn = null;
+    console.error("[dbConnect] MongoDB connection error:", e);
+    throw e;
   }
+
   return cached.conn;
 }
 
