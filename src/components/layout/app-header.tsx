@@ -53,7 +53,7 @@ export function AppHeader() {
           <Link href="/login" className="hidden sm:inline-block">
             <Button variant="ghost">Login</Button>
           </Link>
-          <Link href="/register">
+          <Link href="/register" className="hidden sm:inline-block">
             <Button variant="primary">Register</Button>
           </Link>
           {/* Mobile Menu Toggle */}

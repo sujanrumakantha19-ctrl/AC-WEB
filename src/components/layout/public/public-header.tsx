@@ -48,7 +48,7 @@ export function PublicHeader() {
               Login
             </button>
           </Link>
-          <Link href="/register">
+          <Link href="/register" className="hidden sm:inline-block">
             <button className="px-5 py-2 bg-primary text-white text-xs font-bold rounded-lg shadow-sm hover:bg-secondary transition-all active:scale-95">
               Register
             </button>
