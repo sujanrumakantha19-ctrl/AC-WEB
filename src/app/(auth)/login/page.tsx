@@ -51,7 +51,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md bg-white dark:bg-surface rounded-3xl p-8 shadow-xl space-y-6">
+    <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl space-y-6">
       <div className="text-center space-y-2">
         <Image src="/logo.png" alt="VKS Autoservices" width={512} height={512} className="h-16 w-16 object-contain mx-auto" priority />
         <h1 className="text-xl font-extrabold text-on-surface">Welcome Back</h1>

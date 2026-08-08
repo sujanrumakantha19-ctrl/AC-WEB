@@ -31,7 +31,7 @@ export function UserHeader() {
   }, [error]);
 
   return (
-    <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 px-5 lg:px-8 bg-white/90 backdrop-blur-xl border-b border-outline-variant/30 z-40 flex items-center justify-between transition-all dark:bg-surface/90">
+    <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 px-5 lg:px-8 bg-white/90 backdrop-blur-xl border-b border-outline-variant/30 z-40 flex items-center justify-between transition-all">
       {/* Mobile Bar / Brand */}
       <div className="lg:hidden flex items-center gap-2.5">
         <button
@@ -82,7 +82,7 @@ export function UserHeader() {
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden absolute top-16 left-0 right-0 bg-white dark:bg-surface border-b border-outline-variant/30 p-4 space-y-2.5 shadow-xl z-50">
+        <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-outline-variant/30 p-4 space-y-2.5 shadow-xl z-50">
           <Link
             href="/user/dashboard"
             onClick={() => setMobileMenuOpen(false)}

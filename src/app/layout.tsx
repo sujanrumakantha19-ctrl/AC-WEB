@@ -11,7 +11,7 @@ const inter = Inter({
   display: "swap",
 });
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vks-theme");if(t!=="light"&&t!=="dark"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.setAttribute("data-theme",t);var s=parseFloat(localStorage.getItem("vks-font-scale")||"1");if(!isNaN(s)&&s>=0.8&&s<=1.2){document.documentElement.style.fontSize=(16*s)+"px";}}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vks-theme");if(t!=="light"&&t!=="dark"){t="light";}document.documentElement.setAttribute("data-theme",t);var s=parseFloat(localStorage.getItem("vks-font-scale")||"1");if(!isNaN(s)&&s>=0.8&&s<=1.2){document.documentElement.style.fontSize=(16*s)+"px";}}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`;
 
 export const metadata: Metadata = {
   title: "VKS Autoservices | Premium Automotive Auction Platform",

@@ -31,9 +31,6 @@ function writeStorage(key: string, value: string): void {
 function getInitialMode(): ThemeMode {
   const stored = readStorage(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
-    return "dark";
-  }
   return "light";
 }
 
