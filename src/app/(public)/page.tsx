@@ -95,15 +95,27 @@ export default async function PublicHomePage() {
             Happening Right Now
           </span>
           <h2 className="text-xl md:text-2xl font-extrabold text-on-surface mt-0.5">
-            Featured Auction
+            Featured Auctions
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {liveAuctions.map((auction: any) => (
-            <DomainAuctionCard key={auction.id} auction={auction} targetHref={`/login?redirect=/user/live/${auction.id}`} ctaText="Login to Offer" />
-          ))}
-        </div>
+        {liveAuctions.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {liveAuctions.map((auction: any) => (
+              <DomainAuctionCard key={auction.id} auction={auction} targetHref={`/login?redirect=/user/live/${auction.id}`} ctaText="Login to Offer" />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-8 text-center border border-outline-variant/30 shadow-xs max-w-md mx-auto space-y-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-2xl">gavel</span>
+            </div>
+            <h3 className="text-base font-extrabold text-on-surface">No Live Auctions Right Now</h3>
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              There are currently no active live auctions in the database. Check back soon or create new lots from the Admin Panel!
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Upcoming Auctions */}
