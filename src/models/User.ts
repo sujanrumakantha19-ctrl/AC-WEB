@@ -23,6 +23,8 @@ export interface IUser extends Document {
   whatsAppGroupLinkSent?: boolean;
   whatsAppGroupPending?: boolean;
   whatsAppGroupUpdatedAt?: Date;
+  resetOtp?: string;
+  resetOtpExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -51,6 +53,8 @@ const UserSchema = new Schema<IUser>(
     whatsAppGroupLinkSent: { type: Boolean, default: false },
     whatsAppGroupPending: { type: Boolean, default: false },
     whatsAppGroupUpdatedAt: { type: Date },
+    resetOtp: { type: String },
+    resetOtpExpires: { type: Date },
   },
   { timestamps: true }
 );
