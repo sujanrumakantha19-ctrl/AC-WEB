@@ -15,6 +15,7 @@ import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 import { useGetAuctionQuery, useGetRoundStateQuery, useGetOfferTimelineQuery } from "@/services/auctions-api";
 import { usePlaceOfferMutation } from "@/services/offers-api";
 import { useAppSelector } from "@/redux/hooks";
+import { useCountdown } from "@/lib/use-countdown";
 
 export function UserLiveRoomClient({ id }: { id: string }) {
   const router = useRouter();
@@ -28,6 +29,8 @@ export function UserLiveRoomClient({ id }: { id: string }) {
   const { data: roundState } = useGetRoundStateQuery(id, { pollingInterval: 5000 });
   const { data: offerTimeline } = useGetOfferTimelineQuery(id, { pollingInterval: 5000 });
   const [placeOffer, { isLoading: offerLoading }] = usePlaceOfferMutation();
+  const currentRoundFromAuction = auctionData?.auction?.currentRound || 1;
+  const roundStartCountdown = useCountdown(auctionData?.auction?.roundTimes?.[currentRoundFromAuction - 1]?.start);
 
   const auction = auctionData?.auction;
   const userId = user?._id || user?.id;
@@ -277,6 +280,18 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                 <div>
                   <p className="text-xs font-bold text-amber-900">Round {currentRound} is paused</p>
                   <p className="text-[10px] text-amber-700 mt-0.5">Offers are not being accepted until the admin resumes the round.</p>
+                </div>
+              </div>
+            )}
+
+            {isLive && hasAccess && currentRoundState?.status === "pending" && (
+              <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-3">
+                <span className="material-symbols-outlined text-primary text-xl">schedule</span>
+                <div>
+                  <p className="text-xs font-bold text-primary">Round {currentRound} hasn&apos;t started yet</p>
+                  <p className="text-sm font-extrabold font-mono text-primary mt-0.5">
+                    {roundStartCountdown.hasStarted ? "Starting soon..." : `Starts in ${roundStartCountdown.display || "..."}`}
+                  </p>
                 </div>
               </div>
             )}

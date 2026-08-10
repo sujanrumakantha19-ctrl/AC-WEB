@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
-import Notification from "@/models/Notification";
 import { ok, badRequest, route, requireAdmin, notFound } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
 import { broadcastAuctionEvent } from "@/lib/auction-ws";
+import { notifyRoundStarted, notifyRoundEnded, notifyAuctionEnded } from "@/lib/round-state-sync";
 
 const VALID_ACTIONS = ["start", "pause", "resume", "end", "cancel"] as const;
 
@@ -38,6 +38,13 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
       auction.roundStates[roundIdx].status = "active";
       auction.roundStates[roundIdx].startedAt = new Date();
       auction.roundStates[roundIdx].highestOffer = auction.roundStates[roundIdx].highestOffer || auction.startingOffer;
+
+      const rt = auction.roundTimes?.[roundIdx];
+      if (rt && (!rt.start || new Date(rt.start) > new Date())) {
+        rt.start = new Date().toISOString();
+      }
+
+      await notifyRoundStarted(auction, auction.currentRound);
       break;
     }
     case "pause": {
@@ -58,22 +65,23 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
         auction.winner = auction.roundStates[roundIdx].highestBuyer;
         auction.winningOffer = auction.roundStates[roundIdx].highestOffer;
 
-        if (auction.winner) {
-          await Notification.create({
-            user: auction.winner,
-            title: "You won the auction!",
-            message: `Congratulations! You won ${auction.title} with an offer of ₹${auction.winningOffer?.toLocaleString("en-IN")}`,
-            type: "win",
-            relatedAuction: auction._id,
-          });
-        }
+        await notifyRoundEnded(auction, auction.currentRound);
+        await notifyAuctionEnded(auction);
       } else {
+        await notifyRoundEnded(auction, auction.currentRound);
         auction.currentRound += 1;
         const nextIdx = auction.currentRound - 1;
         const prevHighest = auction.roundStates[roundIdx].highestOffer;
         auction.roundStates[nextIdx].status = "active";
         auction.roundStates[nextIdx].highestOffer = prevHighest;
         auction.roundStates[nextIdx].startedAt = new Date();
+
+        const nextRt = auction.roundTimes?.[nextIdx];
+        if (nextRt && (!nextRt.start || new Date(nextRt.start) > new Date())) {
+          nextRt.start = new Date().toISOString();
+        }
+
+        await notifyRoundStarted(auction, auction.currentRound);
       }
       break;
     }

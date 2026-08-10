@@ -4,6 +4,7 @@ import Offer from "@/models/Offer";
 import User from "@/models/User";
 import Payment from "@/models/Payment";
 import Notification from "@/models/Notification";
+import { notifyAdmins } from "@/lib/auction-notifications";
 
 export interface RefundStatusByUser {
   buyerId: string;
@@ -159,6 +160,12 @@ export async function processAuctionRefunds(auctionId: string): Promise<{
 
   auction.refundsProcessed = true;
   await auction.save();
+
+  await notifyAdmins(
+    "Refunds processed",
+    `${eligible.length} user(s) refunded ₹${fmt(fee)} each for "${auction.title}".`,
+    auction._id
+  );
 
   return {
     processed: true,

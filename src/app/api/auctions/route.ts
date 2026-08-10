@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
 import { ok, created, badRequest, route, requireAdmin } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
+import { isSameMonth, isInNextMonth } from "@/lib/auction-status";
 
 export const GET = route(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
@@ -19,11 +20,11 @@ export const GET = route(async (request: NextRequest) => {
 
     const firstStart = a.startTime ? new Date(a.startTime) : null;
     const lastEnd = a.endTime ? new Date(a.endTime) : null;
+    const roundOneStart = a.roundTimes?.[0]?.start ? new Date(a.roundTimes[0].start) : firstStart;
+    const liveStart = roundOneStart && !isNaN(roundOneStart.getTime()) ? roundOneStart : firstStart;
     if (firstStart && lastEnd && a.status !== "ENDED") {
-      const roundOneStart = a.roundTimes?.[0]?.start ? new Date(a.roundTimes[0].start) : firstStart;
-      const liveStart = roundOneStart && !isNaN(roundOneStart.getTime()) ? roundOneStart : firstStart;
       if (now > lastEnd) newStatus = "ENDED";
-      else if (now >= liveStart) newStatus = "LIVE";
+      else if (isSameMonth(now, liveStart)) newStatus = "LIVE";
       else newStatus = "UPCOMING";
     }
 
@@ -84,6 +85,10 @@ export const GET = route(async (request: NextRequest) => {
       } catch (err) {
         console.error("[auction-refunds] list route: failed to process", a._id, err);
       }
+    }
+
+    if (newStatus !== "ENDED" && newStatus === "UPCOMING" && !isInNextMonth(now, liveStart)) {
+      continue;
     }
 
     if (!status || a.status === status) {

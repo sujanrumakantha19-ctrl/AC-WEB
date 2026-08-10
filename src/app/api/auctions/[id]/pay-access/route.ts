@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import Auction from "@/models/Auction";
 import User from "@/models/User";
 import Payment from "@/models/Payment";
-import { sendWelcomeMessageAfterPayment } from "@/lib/whatsapp-groups";
+import { notifyAdmins } from "@/lib/auction-notifications";
 import { ok, badRequest, route, requireUser, notFound } from "@/lib/api-helpers";
 
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
@@ -25,7 +25,7 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
 
   const alreadyPaid = (user.paidAccessAuctions || []).some((aid: mongoose.Types.ObjectId) => aid.toString() === auction._id.toString());
   if (alreadyPaid) {
-    return ok({ success: true, alreadyPaid: true, whatsappGroupLink: auction.whatsappGroupLink || "" });
+    return ok({ success: true, alreadyPaid: true });
   }
 
   if (!orderId || !paymentId || !signature) {
@@ -50,6 +50,12 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
     await user.save();
   }
 
+  notifyAdmins(
+    "New participant paid",
+    `${user.name} (${user.cusId}) unlocked access to "${auction.title}".`,
+    auction._id
+  );
+
   try {
     await Payment.updateOne(
       { orderId },
@@ -59,9 +65,5 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
     console.error("[razorpay] failed to mark payment paid", err);
   }
 
-  sendWelcomeMessageAfterPayment(auth.userId).catch((err) => {
-    console.error("[whatsapp] failed to send welcome after payment", err);
-  });
-
-  return ok({ success: true, whatsappGroupLink: auction.whatsappGroupLink || "" });
+  return ok({ success: true });
 });

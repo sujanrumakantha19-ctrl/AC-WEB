@@ -3,6 +3,7 @@ import Auction from "@/models/Auction";
 import Offer from "@/models/Offer";
 import { ok, route, notFound } from "@/lib/api-helpers";
 import { getUserFromRequest } from "@/lib/auth";
+import { syncAuctionRoundStates } from "@/lib/round-state-sync";
 
 export const GET = route<{ id: string }>(async (request: NextRequest, { params }) => {
   const payload = await getUserFromRequest(request);
@@ -18,6 +19,9 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
       highestOffer: i === 0 ? auction.startingOffer : 0,
     }));
   }
+
+  const changed = await syncAuctionRoundStates(auction, new Date());
+  if (changed) await auction.save();
 
   const currentRound = auction.currentRound;
   const roundIdx = currentRound - 1;

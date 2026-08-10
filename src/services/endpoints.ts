@@ -59,6 +59,7 @@ export const ENDPOINTS = {
   },
   user: {
     wins: api("/api/user/wins"),
+    myAuctions: api("/api/user/my-auctions"),
   },
   upload: {
     image: api("/api/upload"),

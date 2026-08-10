@@ -3,6 +3,8 @@ import Auction from "@/models/Auction";
 import { ok, route, requireAdmin, notFound, badRequest } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
 import { getUserFromRequest } from "@/lib/auth";
+import { deleteImage, imageIdFromUrl } from "@/lib/gridfs";
+import { syncAuctionRoundStates } from "@/lib/round-state-sync";
 
 export const GET = route<{ id: string }>(async (request: NextRequest, { params }) => {
   const payload = await getUserFromRequest(request);
@@ -21,41 +23,8 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
     auction.currentRound = auction.currentRound || 1;
   }
 
-  const now = new Date();
-  if (auction.startTime && auction.endTime && auction.status !== "ENDED") {
-    const firstStart = new Date(auction.startTime);
-    const lastEnd = new Date(auction.endTime);
-    if (now > lastEnd) auction.status = "ENDED";
-    else if (now >= firstStart) auction.status = "LIVE";
-  }
-
-  if (auction.status === "LIVE" && auction.rounds > 1 && auction.roundTimes?.length > 0) {
-    for (let i = 0; i < auction.rounds; i++) {
-      const rs = auction.roundStates[i];
-      const rtStart = new Date(auction.roundTimes[i].start);
-      const rtEnd = new Date(auction.roundTimes[i].end);
-      if (rs.status === "pending" && now >= rtStart && now < rtEnd) {
-        rs.status = "active";
-        rs.startedAt = now;
-        rs.highestOffer = rs.highestOffer || auction.startingOffer;
-        auction.currentRound = i + 1;
-      } else if (rs.status === "active" && now >= rtEnd) {
-        rs.status = "completed";
-        rs.endedAt = now;
-        const nextRound = auction.roundStates[i + 1];
-        if (nextRound) {
-          nextRound.status = "active";
-          nextRound.startedAt = now;
-          nextRound.highestOffer = rs.highestOffer;
-          auction.currentRound = i + 2;
-        } else {
-          auction.status = "ENDED";
-          auction.winner = rs.highestBuyer;
-          auction.winningOffer = rs.highestOffer;
-        }
-      }
-    }
-  }
+  const changed = await syncAuctionRoundStates(auction, new Date());
+  if (changed) await auction.save();
 
   const result: Record<string, unknown> = { ...auction.toObject() };
 
@@ -93,6 +62,15 @@ export const PUT = route<{ id: string }>(async (request: NextRequest, { params }
   if (existing && existing.totalOffers === 0 && body.startingOffer) {
     body.currentOffer = body.startingOffer;
   }
+  if (existing) {
+    const kept = new Set(
+      [body.image, ...(body.images || [])].map(imageIdFromUrl).filter(Boolean) as string[]
+    );
+    const removed = [existing.image, ...(existing.images || [])]
+      .map(imageIdFromUrl)
+      .filter((ref): ref is string => !!ref && !kept.has(ref));
+    await Promise.all(removed.map(deleteImage));
+  }
   const auction = await Auction.findByIdAndUpdate(id, body, { new: true });
   if (!auction) return notFound("Auction not found");
 
@@ -104,6 +82,14 @@ export const DELETE = route<{ id: string }>(async (request: NextRequest, { param
   if (auth instanceof Response) return auth;
 
   const { id } = await params;
+  const auction = await Auction.findById(id);
+  if (!auction) return notFound("Auction not found");
+
+  const refs = [auction.image, ...(auction.images || [])]
+    .map(imageIdFromUrl)
+    .filter((ref): ref is string => !!ref);
+  await Promise.all(refs.map(deleteImage));
+
   await Auction.findByIdAndDelete(id);
   return ok({ message: "Auction deleted" });
 });

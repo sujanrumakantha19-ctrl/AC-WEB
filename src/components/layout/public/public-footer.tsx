@@ -30,16 +30,6 @@ export function PublicFooter() {
             <a href={`mailto:${SITE_CONFIG.contact.email}`} className="hover:text-primary transition-colors">{SITE_CONFIG.contact.email}</a>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Call / WhatsApp</p>
-            <p>
-              <a href={`tel:${SITE_CONFIG.contact.phone}`} className="hover:text-primary transition-colors">{SITE_CONFIG.contact.phone}</a> / 9797177351
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">WhatsApp</p>
-            <span>9003991351</span>
-          </div>
-          <div className="space-y-1">
             <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Website</p>
             <a href="https://www.vksautoservices.org" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">www.vksautoservices.org</a>
           </div>

@@ -11,18 +11,30 @@ interface RoundCountdownProps {
 }
 
 export function RoundCountdown({ roundTimes, currentRound = 1, status, className = "" }: RoundCountdownProps) {
-  if (status !== "LIVE" || !roundTimes || roundTimes.length === 0) return null;
-
   const roundIdx = currentRound - 1;
-  const roundEnd = roundTimes[roundIdx]?.end;
-  const { display, hasEnded } = useCountdown(roundEnd);
+  const roundStart = roundTimes?.[roundIdx]?.start;
+  const roundEnd = roundTimes?.[roundIdx]?.end;
 
-  if (hasEnded) return null;
+  const start = useCountdown(roundStart);
+  const end = useCountdown(roundEnd);
+
+  if (status !== "LIVE" || !roundStart || !roundEnd) return null;
+
+  if (!start.hasStarted) {
+    return (
+      <span className={`flex items-center gap-1 text-primary font-bold ${className}`}>
+        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+        Round {currentRound} starts in {start.display || "..."}
+      </span>
+    );
+  }
+
+  if (end.hasEnded) return null;
 
   return (
     <span className={`flex items-center gap-1 text-error font-bold ${className}`}>
       <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping" />
-      Round {currentRound} ends in {display}
+      Round {currentRound} ends in {end.display}
     </span>
   );
 }

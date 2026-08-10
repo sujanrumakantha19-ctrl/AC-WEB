@@ -4,6 +4,8 @@ import Auction from "@/models/Auction";
 import Notification from "@/models/Notification";
 import { ok, created, badRequest, notFound, route, requireUser } from "@/lib/api-helpers";
 import { broadcastAuctionEvent } from "@/lib/auction-ws";
+import { syncAuctionRoundStates } from "@/lib/round-state-sync";
+import { notifyAdmins } from "@/lib/auction-notifications";
 
 export const GET = route(async (request: NextRequest) => {
   const auth = await requireUser(request);
@@ -44,6 +46,9 @@ export const POST = route(async (request: NextRequest) => {
 
   const auction = await Auction.findById(auctionId);
   if (!auction) return notFound("Auction not found");
+
+  const syncChanged = await syncAuctionRoundStates(auction, new Date());
+  if (syncChanged) await auction.save();
 
   if (auction.status !== "LIVE") {
     return badRequest("Auction is not accepting offers");
@@ -121,6 +126,17 @@ export const POST = route(async (request: NextRequest) => {
     .populate("buyer", "name email phone avatar cusId")
     .populate("auction", "title lotNumber")
     .lean();
+
+  const buyerName =
+    populatedOffer && typeof populatedOffer.buyer === "object" && populatedOffer.buyer.name
+      ? String(populatedOffer.buyer.name)
+      : "A buyer";
+
+  await notifyAdmins(
+    "New offer placed",
+    `${buyerName} placed ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} (Round ${offerRound})`,
+    auction._id
+  );
 
   broadcastAuctionEvent(String(auctionId), {
     type: "offer",

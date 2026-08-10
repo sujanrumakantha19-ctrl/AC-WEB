@@ -54,7 +54,6 @@ export default function RegistrationFeePaymentPage() {
 
   const auction = auctionData?.auction;
   const auctionTitle = auction?.title || "";
-  const whatsappLink = auction?.whatsappGroups?.[0]?.link || auction?.whatsappGroupLink || "";
   const auctionFee = auction?.registrationFee || 0;
   const settingFee = feeData?.value ? parseInt(feeData.value) : NaN;
   const registrationFee =
@@ -209,30 +208,6 @@ export default function RegistrationFeePaymentPage() {
               Success
             </span>
           </div>
-        </div>
-
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-2">
-          <p className="text-xs font-bold text-emerald-900">Join our WhatsApp group</p>
-          <p className="text-[10px] text-emerald-700">Get auction updates, offer alerts & support.</p>
-          {whatsappLink ? (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">chat</span>
-              Join WhatsApp Group
-            </a>
-          ) : (
-            <button
-              onClick={() => {}}
-              className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">chat</span>
-              Join WhatsApp Group
-            </button>
-          )}
         </div>
 
         <div className="space-y-2">

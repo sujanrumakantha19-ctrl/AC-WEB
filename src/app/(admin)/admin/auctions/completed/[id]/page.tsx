@@ -138,7 +138,7 @@ export default function AdminCompletedAuctionDetailPage() {
         </div>
       </div>
 
-      {auction.winner && (
+      {winnerObj && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">

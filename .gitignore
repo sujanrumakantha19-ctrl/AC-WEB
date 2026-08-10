@@ -20,6 +20,9 @@
 # production
 /build
 
+# runtime-uploaded images (now stored in MongoDB GridFS)
+/public/uploads/
+
 # misc
 .DS_Store
 *.pem

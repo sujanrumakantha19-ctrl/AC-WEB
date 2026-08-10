@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import User from "@/models/User";
 import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
-import { assignNewUserToWhatsAppGroup } from "@/lib/whatsapp-groups";
+import { assignNewUserToWhatsAppGroup, sendWelcomeMessageToUser } from "@/lib/whatsapp-groups";
+import { notifyAdmins } from "@/lib/auction-notifications";
 import { created, badRequest, conflict, route } from "@/lib/api-helpers";
 
 async function generateCusId(): Promise<string> {
@@ -48,11 +49,20 @@ export const POST = route(async (request: NextRequest) => {
   });
 
   if (user.phone) {
-    assignNewUserToWhatsAppGroup(String(user._id), user.name, user.phone).catch(() => {});
+    assignNewUserToWhatsAppGroup(String(user._id), user.name, user.phone)
+      .then(() => sendWelcomeMessageToUser(String(user._id)))
+      .catch((err) => {
+        console.error("[whatsapp] failed to send welcome at registration", err);
+      });
   } else {
     user.whatsAppGroupPending = true;
     await user.save();
   }
+
+  await notifyAdmins(
+    "New user registered",
+    `${user.name} · ${user.email}${user.phone ? ` · ${user.phone}` : ""} (${user.cusId})`
+  );
 
   return created({
     message: "Account created successfully",

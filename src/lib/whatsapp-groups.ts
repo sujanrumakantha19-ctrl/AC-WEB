@@ -48,11 +48,10 @@ async function claimSeat(groupId: mongoose.Types.ObjectId | string, capacity: nu
 
 /**
  * Assign a just-registered user to a WhatsApp group.
- * Reserves a seat so the count is protected at registration time, but the
- * actual welcome message is deferred until the user completes payment.
+ * Reserves a seat so the count is protected at registration time.
  * - Finds the most recently filled active group that still has room (the
  *   "current" group being filled).
- * - If none, the user goes to the pending list (worked out at payment time).
+ * - If none, the user goes to the pending list.
  * - When the current group crosses the 900-member threshold, notify admin once.
  */
 export async function assignNewUserToWhatsAppGroup(userId: string, name: string, phone: string) {
@@ -101,10 +100,10 @@ export async function assignNewUserToWhatsAppGroup(userId: string, name: string,
 }
 
 /**
- * Send the welcome message (with the user's WhatsApp group invite link)
- * after the user has paid. Link is sent only once per customer.
+ * Send the welcome message (with the user's WhatsApp group invite link).
+ * Called at account creation. Link is sent only once per customer.
  */
-export async function sendWelcomeMessageAfterPayment(userId: string) {
+export async function sendWelcomeMessageToUser(userId: string) {
   const user = await User.findById(userId).exec();
   if (!user) return { sent: false };
 
@@ -129,7 +128,7 @@ export async function sendWelcomeMessageAfterPayment(userId: string) {
 /**
  * Process pending customers against an active group. Atomically fills the
  * group and reserves each customer's seat. The welcome message itself is
- * sent later from the payment flow.
+ * sent later from the registration flow.
  */
 export async function processPendingForGroup(groupId: string) {
   const group = await WhatsAppGroup.findById(groupId).exec();

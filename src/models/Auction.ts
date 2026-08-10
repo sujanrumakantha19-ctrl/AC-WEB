@@ -28,6 +28,8 @@ export interface IAuction extends Omit<Document, 'model'> {
     highestBuyer?: mongoose.Types.ObjectId;
     startedAt?: Date;
     endedAt?: Date;
+    startNotified?: boolean;
+    endNotified?: boolean;
   }[];
   status: "LIVE" | "UPCOMING" | "ENDED";
   endTime: Date;
@@ -48,6 +50,7 @@ export interface IAuction extends Omit<Document, 'model'> {
   winningOffer?: number;
   cancelReason?: string;
   refundsProcessed?: boolean;
+  liveNotified?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -81,6 +84,8 @@ const AuctionSchema = new Schema<IAuction>(
       highestBuyer: { type: Schema.Types.ObjectId, ref: "User" },
       startedAt: { type: Date },
       endedAt: { type: Date },
+      startNotified: { type: Boolean, default: false },
+      endNotified: { type: Boolean, default: false },
     }],
     status: { type: String, enum: ["LIVE", "UPCOMING", "ENDED"], default: "UPCOMING" },
     endTime: { type: Date, required: true },
@@ -105,6 +110,7 @@ const AuctionSchema = new Schema<IAuction>(
     winningOffer: { type: Number },
     cancelReason: { type: String },
     refundsProcessed: { type: Boolean, default: false },
+    liveNotified: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

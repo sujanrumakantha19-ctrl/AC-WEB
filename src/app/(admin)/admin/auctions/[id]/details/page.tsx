@@ -99,6 +99,7 @@ export default function AdminAuctionDetailsPage() {
 
   const isLive = auction.status === "LIVE";
   const isEnded = auction.status === "ENDED";
+  const isUpcoming = !isLive && !isEnded;
   const roundStates = auction.roundStates || [];
 
   const timelineOffers = offers
@@ -195,30 +196,36 @@ export default function AdminAuctionDetailsPage() {
                 <p className="text-xs font-bold text-outline uppercase tracking-wider">Starting Offer</p>
                 <p className="text-base font-extrabold text-primary">{formatINR(auction.startingOffer)}</p>
               </div>
-              <div>
-                <p className="text-xs font-bold text-outline uppercase tracking-wider">Current Offer</p>
-                <p className="text-base font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-outline uppercase tracking-wider">Total Offers</p>
-                <p className="text-base font-bold text-on-surface">{auction.totalOffers}</p>
-              </div>
+              {!isUpcoming && (
+                <>
+                  <div>
+                    <p className="text-xs font-bold text-outline uppercase tracking-wider">Current Offer</p>
+                    <p className="text-base font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-outline uppercase tracking-wider">Total Offers</p>
+                    <p className="text-base font-bold text-on-surface">{auction.totalOffers}</p>
+                  </div>
+                </>
+              )}
               <div>
                 <p className="text-xs font-bold text-outline uppercase tracking-wider">Reg. Fee</p>
                 <p className="text-base font-bold text-on-surface">{formatINR(auction.registrationFee || 0)}</p>
               </div>
-              <div
-                onClick={() => setParticipantsPopupOpen(true)}
-                className="cursor-pointer hover:bg-primary/10 px-2 py-1 -my-1 rounded-xl transition-all group/part"
-                title={`Click to view ${isLive || isEnded ? "participants" : "registered users"} list`}
-              >
-                <p className="text-xs font-bold text-outline uppercase tracking-wider group-hover/part:text-primary">
-                  {isLive || isEnded ? "Participants" : "Registered"}
-                </p>
-                <p className="text-base font-extrabold text-primary">
-                  {allParticipants.length}
-                </p>
-              </div>
+              {!isUpcoming && (
+                <div
+                  onClick={() => setParticipantsPopupOpen(true)}
+                  className="cursor-pointer hover:bg-primary/10 px-2 py-1 -my-1 rounded-xl transition-all group/part"
+                  title={`Click to view ${isLive || isEnded ? "participants" : "registered users"} list`}
+                >
+                  <p className="text-xs font-bold text-outline uppercase tracking-wider group-hover/part:text-primary">
+                    {isLive || isEnded ? "Participants" : "Registered"}
+                  </p>
+                  <p className="text-base font-extrabold text-primary">
+                    {allParticipants.length}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap justify-between gap-x-6 gap-y-4 mt-4">
@@ -258,27 +265,33 @@ export default function AdminAuctionDetailsPage() {
 
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-on-surface">Round {rs.round}</p>
-                    <div>
-                      <p className="text-[10px] font-bold text-outline uppercase tracking-wider">
-                        {i === roundStates.length - 1 ? "Final Highest Offer" : "Highest Offer"}
-                      </p>
-                      <p className="text-base font-extrabold font-mono text-primary">
-                        {rs.highestOffer ? formatINR(rs.highestOffer) : "--"}
-                      </p>
-                    </div>
-                    <p className="text-[10px] font-semibold text-outline">Total Offers: {offers.filter((b) => b.round === rs.round).length}</p>
+                    {!isUpcoming && (
+                      <>
+                        <div>
+                          <p className="text-[10px] font-bold text-outline uppercase tracking-wider">
+                            {i === roundStates.length - 1 ? "Final Highest Offer" : "Highest Offer"}
+                          </p>
+                          <p className="text-base font-extrabold font-mono text-primary">
+                            {rs.highestOffer ? formatINR(rs.highestOffer) : "--"}
+                          </p>
+                        </div>
+                        <p className="text-[10px] font-semibold text-outline">Total Offers: {offers.filter((b) => b.round === rs.round).length}</p>
+                      </>
+                    )}
                   </div>
 
-                  <div className="flex flex-col items-center gap-1.5 w-full">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-semibold text-primary">
-                      {i === roundStates.length - 1 ? (
-                        <span className="text-2xl leading-none">👑</span>
-                      ) : (
-                        <span className="material-symbols-outlined text-xs">person</span>
-                      )}
-                      <span>Highest Offer: {buyerLabel}</span>
-                    </span>
-                  </div>
+                  {!isUpcoming && (
+                    <div className="flex flex-col items-center gap-1.5 w-full">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-semibold text-primary">
+                        {i === roundStates.length - 1 ? (
+                          <span className="text-2xl leading-none">👑</span>
+                        ) : (
+                          <span className="material-symbols-outlined text-xs">person</span>
+                        )}
+                        <span>Highest Offer: {buyerLabel}</span>
+                      </span>
+                    </div>
+                  )}
 
                   <div className="w-full space-y-1 pt-2 mt-1 border-t border-outline-variant/20 text-[10px] font-medium text-on-surface-variant">
                     <p className="flex items-center justify-center gap-1">
@@ -335,6 +348,7 @@ export default function AdminAuctionDetailsPage() {
           );
         })()}
 
+        {!isUpcoming && (
         <div className="bg-white rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
@@ -418,6 +432,7 @@ export default function AdminAuctionDetailsPage() {
             </div>
           )}
         </div>
+        )}
 
         {(auction.rules || (auction.whatsappGroups && auction.whatsappGroups.length > 0)) && (
           <div className="bg-white rounded-2xl p-5 space-y-4">

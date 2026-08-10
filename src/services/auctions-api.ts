@@ -61,7 +61,7 @@ export const auctionsApi = api.injectEndpoints({
       invalidatesTags: ["Auction"],
     }),
     payAccess: build.mutation<
-      { success: boolean; whatsappGroupLink?: string },
+      { success: boolean },
       { auctionId: string; orderId: string; paymentId: string; signature: string }
     >({
       query: ({ auctionId, orderId, paymentId, signature }) => ({
