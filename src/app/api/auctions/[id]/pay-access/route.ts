@@ -7,7 +7,7 @@ import Payment from "@/models/Payment";
 import { notifyAdmins } from "@/lib/auction-notifications";
 import { ok, badRequest, route, requireUser, notFound } from "@/lib/api-helpers";
 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+const getRazorpaySecret = () => process.env.RAZORPAY_KEY_SECRET || "UBVj1SwMjuZynLqSUNWOKq2W";
 
 export const POST = route<{ id: string }>(async (request: NextRequest, { params }) => {
   const auth = await requireUser(request);
@@ -33,7 +33,7 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
   }
 
   const expectedSignature = crypto
-    .createHmac("sha256", RAZORPAY_KEY_SECRET)
+    .createHmac("sha256", getRazorpaySecret())
     .update(`${orderId}|${paymentId}`)
     .digest("hex");
 

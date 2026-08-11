@@ -3,10 +3,15 @@ import mongoose from "mongoose";
 import Payment from "@/models/Payment";
 import User from "@/models/User";
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+const getKeys = () => ({
+  keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_TNJwP7qOIAy8zV",
+  keySecret: process.env.RAZORPAY_KEY_SECRET || "UBVj1SwMjuZynLqSUNWOKq2W",
+});
 
-const authHeader = () => "Basic " + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+const authHeader = () => {
+  const { keyId, keySecret } = getKeys();
+  return "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+};
 
 export interface RazorpayOrder {
   id: string;
@@ -20,7 +25,8 @@ export interface RazorpayOrder {
 }
 
 export async function fetchRazorpayOrder(orderId: string): Promise<RazorpayOrder | null> {
-  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return null;
+  const { keyId, keySecret } = getKeys();
+  if (!keyId || !keySecret) return null;
   try {
     const res = await fetch(`https://api.razorpay.com/v1/orders/${orderId}`, {
       headers: { Authorization: authHeader() },
@@ -42,7 +48,8 @@ export interface RazorpayPayment {
 }
 
 export async function fetchRazorpayOrderPayments(orderId: string): Promise<RazorpayPayment[]> {
-  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return [];
+  const { keyId, keySecret } = getKeys();
+  if (!keyId || !keySecret) return [];
   try {
     const res = await fetch(`https://api.razorpay.com/v1/orders/${orderId}/payments?count=100`, {
       headers: { Authorization: authHeader() },

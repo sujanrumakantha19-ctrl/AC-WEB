@@ -6,8 +6,11 @@ import Setting from "@/models/Setting";
 import Payment from "@/models/Payment";
 import { ok, badRequest, notFound, route, requireUser } from "@/lib/api-helpers";
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "";
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+const getRazorpayKeys = () => {
+  const keyId = process.env.RAZORPAY_KEY_ID || "rzp_test_TNJwP7qOIAy8zV";
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || "UBVj1SwMjuZynLqSUNWOKq2W";
+  return { keyId, keySecret };
+};
 
 const DEFAULT_FEE = 500;
 
@@ -50,6 +53,8 @@ export const POST = route(async (request: NextRequest) => {
   const feeSetting = await Setting.findOne({ key: { $in: ["registrationFee", "registration-fee"] } }).select("value").lean() as any;
   const settingFee = feeSetting?.value ? parseInt(feeSetting.value) : NaN;
   const amount = auction.registrationFee || (!isNaN(settingFee) && settingFee > 0 ? settingFee : DEFAULT_FEE);
+
+  const { keyId: RAZORPAY_KEY_ID, keySecret: RAZORPAY_KEY_SECRET } = getRazorpayKeys();
 
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
     return ok({ success: false, error: "Razorpay is not configured", amount });
