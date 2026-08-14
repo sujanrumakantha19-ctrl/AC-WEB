@@ -68,7 +68,7 @@ export default function AboutUsPage() {
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Address</p>
             <p className="text-on-surface-variant leading-relaxed">
-              185/1A, Kodangi Thoppu Street,
+              98/13, Kodangi Thoppu Street,
               <br />
               Thirupparankundram,
               <br />
@@ -78,14 +78,14 @@ export default function AboutUsPage() {
           <div className="space-y-3">
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">E-mail id</p>
-              <a href="mailto:owner@vksautoservices.org" className="text-primary hover:underline">
-                owner@vksautoservices.org
+              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
+                owner@vksautoserviceauctions.com
               </a>
             </div>
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Call / WhatsApp</p>
               <p className="text-on-surface-variant">
-                <a href="tel:9797177351" className="text-primary hover:underline">9797177351</a> /{" "}
+                <a href="tel:9597177351" className="text-primary hover:underline">9597177351</a> /{" "}
                 <a href="tel:9003991351" className="text-primary hover:underline">9003991351</a>
               </p>
             </div>
@@ -105,8 +105,8 @@ export default function AboutUsPage() {
           <div className="space-y-3">
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Email</p>
-              <a href="mailto:sales@vksautoservices.org" className="text-primary hover:underline">
-                sales@vksautoservices.org
+              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
+                owner@vksautoserviceauctions.com
               </a>
             </div>
             <div>

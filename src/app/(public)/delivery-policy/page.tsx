@@ -84,8 +84,8 @@ export default function DeliveryPolicyPage() {
           <p>
             For any issues in utilizing our services you may contact our helpdesk on{" "}
             <a href="tel:9797177351" className="text-primary hover:underline font-bold">9597177351</a> or{" "}
-            <a href="mailto:support@vksautoservices.org" className="text-primary hover:underline font-bold">
-              billing@vksautosettleeauctions.com
+            <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline font-bold">
+              owner@vksautoserviceauctions.com
             </a>
           </p>
         </div>
