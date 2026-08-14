@@ -16,7 +16,9 @@ export function UserSidebar() {
     { label: "Dashboard", href: "/user/dashboard", icon: "dashboard" },
     { label: "Auctions", href: "/user/auctions", icon: "campaign" },
     { label: "Auction Room", href: "/user/live", icon: "gavel" },
+    { label: "My Auctions", href: "/user/my-auctions", icon: "emoji_events" },
     { label: "Purchase History", href: "/user/purchases", icon: "history" },
+    { label: "Payment History", href: "/user/payments", icon: "payments" },
     { label: "Notifications", href: "/user/notifications", icon: "notifications" },
     { label: "My Profile", href: "/user/profile", icon: "settings" },
   ];

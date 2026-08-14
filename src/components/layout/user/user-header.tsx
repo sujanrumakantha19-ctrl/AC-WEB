@@ -108,12 +108,28 @@ export function UserHeader() {
             Auction Room
           </Link>
           <Link
+            href="/user/my-auctions"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 py-2 text-xs font-bold text-on-surface hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-base">emoji_events</span>
+            My Auctions
+          </Link>
+          <Link
             href="/user/purchases"
             onClick={() => setMobileMenuOpen(false)}
             className="flex items-center gap-3 py-2 text-xs font-bold text-on-surface hover:text-primary"
           >
             <span className="material-symbols-outlined text-base">history</span>
             Purchase History
+          </Link>
+          <Link
+            href="/user/payments"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3 py-2 text-xs font-bold text-on-surface hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-base">payments</span>
+            Payment History
           </Link>
           <Link
             href="/user/notifications"
