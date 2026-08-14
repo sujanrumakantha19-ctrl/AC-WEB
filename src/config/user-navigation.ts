@@ -7,4 +7,5 @@ export const USER_NAV_ITEMS: NavItem[] = [
   { label: "Notifications", href: "/user/notifications", icon: "notifications", badge: "3" },
   { label: "My Auctions", href: "/user/my-auctions", icon: "history", activePrefixes: ["/user/my-auctions"] },
   { label: "Purchase History", href: "/user/purchases", icon: "receipt" },
+  { label: "Payment History", href: "/user/payments", icon: "payments" },
 ];

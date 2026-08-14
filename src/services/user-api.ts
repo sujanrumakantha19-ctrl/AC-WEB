@@ -38,7 +38,11 @@ export const userApi = api.injectEndpoints({
       query: () => ({ url: ENDPOINTS.user.myAuctions }),
       providesTags: ["Auction", "Offers", "Wins"],
     }),
+    getMyPayments: build.query<{ payments: any[] }, void>({
+      query: () => ({ url: ENDPOINTS.user.payments }),
+      providesTags: ["Auction"],
+    }),
   }),
 });
 
-export const { useGetWinsCountQuery, useGetMyAuctionsQuery } = userApi;
+export const { useGetWinsCountQuery, useGetMyAuctionsQuery, useGetMyPaymentsQuery } = userApi;
