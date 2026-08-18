@@ -20,8 +20,8 @@ export async function POST() {
     // 2. Create Admin Account
     const admin = await User.create({
       name: "VKS Admin",
-      email: "admin@vks.com",
-      password: "Admin@1234",
+      email: "admin@gmail.com",
+      password: "12345678",
       role: "admin",
       cusId: "ADM-1001",
       phone: "919876543210",

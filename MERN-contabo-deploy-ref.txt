@@ -1,0 +1,697 @@
+================================================================================
+  MERN STACK — CONTABO VPS DEPLOYMENT REFERENCE (A-Z)
+================================================================================
+  Purpose:   Deploy any React + Node.js + MongoDB app to Contabo VPS
+  OS:        Ubuntu 24.04 LTS (or any Debian-based)
+  Local OS:  Windows (PowerShell) or Linux/Mac (Bash)
+================================================================================
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 1 — WHAT THIS GUIDE COVERS
+████████████████████████████████████████████████████████████████████████████████
+
+  By the end of this guide, an AI agent should be able to:
+  ✅ Order & access a Contabo VPS
+  ✅ Install Node.js, MongoDB, Nginx, PM2 on Ubuntu
+  ✅ Configure Nginx as a reverse proxy
+  ✅ Deploy a MERN app (React frontend + Node.js backend + MongoDB)
+  ✅ Set up automated CI/CD via GitHub Actions
+  ✅ Use deploy scripts for quick updates
+
+  ASSUMPTIONS:
+  - The MERN app has this folder structure:
+        project-root/
+        ├── backend/
+        │   ├── src/
+        │   │   ├── server.js       # Express entry point (port 5000)
+        │   │   ├── config/
+        │   │   │   └── db.js       # MongoDB connection
+        │   │   └── routes/         # API routes
+        │   ├── .env                # Environment vars
+        │   └── package.json
+        ├── frontend/
+        │   ├── src/                # React source
+        │   ├── package.json
+        │   └── vite.config.js (or next.config.js, etc.)
+        └── deploy/
+            ├── deploy.ps1          # Windows deploy script (plink/pscp)
+            ├── deploy.sh           # Linux/Mac deploy script (sshpass)
+            └── nginx.conf          # Nginx config template
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 2 — CONTABO VPS SETUP
+████████████████████████████████████████████████████████████████████████████████
+
+  2.1 ORDER A VPS
+  ──────────────────────────────────────────────────────────────────────────────
+  - Go to https://contabo.com
+  - Choose a VPS plan (e.g., VPS S or higher)
+  - Select Ubuntu 24.04 LTS as the OS
+  - After order, you'll receive an email with:
+      IP Address:  <your-server-ip>
+      Username:    root
+      Password:    <your-root-password>
+
+  2.2 INITIAL SERVER ACCESS
+  ──────────────────────────────────────────────────────────────────────────────
+  From Windows (PowerShell):
+    & "$env:TEMP\plink.exe" -ssh -pw "<password>" root@<your-server-ip>
+
+  From Linux/Mac:
+    ssh root@<your-server-ip>
+    (enter password when prompted)
+
+  FIRST LOGIN — change password immediately:
+    passwd
+    (enter current password, then new password)
+
+  2.3 INSTALL PuTTY TOOLS (Windows only — one-time setup)
+  ──────────────────────────────────────────────────────────────────────────────
+  plink.exe (SSH client) and pscp.exe (SCP client) are needed for deploy scripts.
+  They auto-download to %TEMP% if missing via the deploy script, OR you can:
+
+    # Download manually from PowerShell:
+    $url = "https://the.earth.li/~sgtatham/putty/latest/w64/putty.zip"
+    $tmp = "$env:TEMP\putty.zip"
+    Invoke-WebRequest -Uri $url -OutFile $tmp
+    Expand-Archive -Path $tmp -DestinationPath "$env:TEMP\putty" -Force
+    Copy-Item "$env:TEMP\putty\plink.exe" "$env:TEMP\"
+    Copy-Item "$env:TEMP\putty\pscp.exe" "$env:TEMP\"
+    Remove-Item $tmp, "$env:TEMP\putty" -Recurse -Force
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 3 — SERVER SETUP (Run once on fresh VPS)
+████████████████████████████████████████████████████████████████████████████████
+
+  3.1 SYSTEM UPDATE
+  ──────────────────────────────────────────────────────────────────────────────
+  From Windows:
+    & "$env:TEMP\plink.exe" -ssh -pw "<password>" root@<ip> "apt update && apt upgrade -y"
+
+  From Linux/Mac:
+    ssh root@<ip> "apt update && apt upgrade -y"
+
+  3.2 INSTALL NODE.JS 22.x
+  ──────────────────────────────────────────────────────────────────────────────
+  SSH into server, then:
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    apt install -y nodejs
+    node -v   # Should show v22.x.x
+    npm -v    # Should show 10.x.x
+
+  3.3 INSTALL MONGODB 7.0
+  ──────────────────────────────────────────────────────────────────────────────
+  SSH into server, then:
+    # Import MongoDB GPG key
+    curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
+
+    # Add repository
+    echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+
+    # Install
+    apt update
+    apt install -y mongodb-org
+
+    # Start & enable on boot
+    systemctl start mongod
+    systemctl enable mongod
+    systemctl status mongod   # Verify
+
+  MongoDB binds to 127.0.0.1 only by default — do NOT change this
+  for security. Your backend connects via localhost.
+
+  3.4 INSTALL NGINX
+  ──────────────────────────────────────────────────────────────────────────────
+  SSH into server, then:
+    apt install -y nginx
+    systemctl start nginx
+    systemctl enable nginx
+    systemctl status nginx   # Verify
+
+  3.5 INSTALL PM2 (Process Manager)
+  ──────────────────────────────────────────────────────────────────────────────
+  SSH into server, then:
+    npm install -g pm2
+    pm2 startup systemd    # Auto-start PM2 on boot
+    pm2 --version          # Verify
+
+  3.6 CREATE APPLICATION DIRECTORY
+  ──────────────────────────────────────────────────────────────────────────────
+  SSH into server, then:
+    mkdir -p /opt/iot/backend
+    mkdir -p /opt/iot/frontend
+    mkdir -p /opt/iot/deploy
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 4 — LOCAL PROJECT SETUP (YOUR MACHINE)
+████████████████████████████████████████████████████████████████████████████████
+
+  4.1 PROJECT STRUCTURE REQUIREMENTS
+  ──────────────────────────────────────────────────────────────────────────────
+  Your project MUST follow this exact structure for deploy scripts to work:
+
+    your-project/
+    ├── backend/
+    │   ├── src/
+    │   │   ├── server.js          # Express app listening on PORT (from .env)
+    │   │   └── config/
+    │   │       └── db.js          # mongoose.connect(process.env.MONGODB_URI)
+    │   ├── .env                   # Environment variables
+    │   ├── package.json
+    │   └── .gitignore             # Include: node_modules/, .env
+    ├── frontend/
+    │   ├── src/
+    │   ├── public/
+    │   ├── package.json
+    │   └── vite.config.js
+    └── deploy/
+        ├── deploy.ps1             # From Section 6
+        ├── deploy.sh              # From Section 6
+        └── nginx.conf             # From Section 5
+
+  4.2 BACKEND .env TEMPLATE
+  ──────────────────────────────────────────────────────────────────────────────
+  Create backend/.env with:
+
+    PORT=5000
+    MONGODB_URI=mongodb://127.0.0.1:27017/your-db-name
+    JWT_SECRET=your_random_secret_here
+    NODE_ENV=development
+
+  On the SERVER (/opt/iot/backend/.env), change:
+    NODE_ENV=production
+
+  4.3 VITE CONFIG — Add proxy for API calls
+  ──────────────────────────────────────────────────────────────────────────────
+  In vite.config.js:
+
+    import { defineConfig } from 'vite'
+    import react from '@vitejs/plugin-react'
+
+    export default defineConfig({
+      plugins: [react()],
+      server: {
+        proxy: {
+          '/api': {
+            target: 'http://localhost:5000',
+            changeOrigin: true
+          },
+          '/socket.io': {
+            target: 'http://localhost:4000',
+            ws: true
+          }
+        }
+      }
+    })
+
+  The backend package.json scripts should include:
+    "scripts": {
+      "start": "node src/server.js",
+      "dev": "nodemon src/server.js"
+    }
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 5 — NGINX CONFIGURATION (Server-Side)
+████████████████████████████████████████████████████████████████████████████████
+
+  Create /etc/nginx/sites-available/iot on the server:
+
+    server {
+        listen 80;
+        server_name <your-server-ip>;
+
+        root /opt/iot/frontend/dist;
+        index index.html;
+
+        gzip on;
+        gzip_types text/css text/javascript application/javascript application/json image/svg+xml;
+        gzip_min_length 256;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        location /api {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            proxy_read_timeout 86400s;
+        }
+
+        location /socket.io {
+            proxy_pass http://127.0.0.1:4000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            proxy_read_timeout 86400s;
+        }
+    }
+
+  Enable the site:
+    ln -s /etc/nginx/sites-available/iot /etc/nginx/sites-enabled/
+    rm -f /etc/nginx/sites-enabled/default   # Remove default
+    nginx -t                                  # Test config
+    systemctl reload nginx
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 6 — DEPLOY SCRIPTS (in deploy/ folder)
+████████████████████████████████████████████████████████████████████████████████
+
+  6.1 WINDOWS — deploy.ps1
+  ──────────────────────────────────────────────────────────────────────────────
+  Save this as deploy/deploy.ps1 (edit the 4 variables at top for your project):
+
+    param([string]$Target = "all")
+
+    $ServerIp = "<YOUR_SERVER_IP>"
+    $User = "root"
+    $Pass = "<YOUR_SERVER_PASSWORD>"
+    $RemoteDir = "/opt/iot"
+    $Plink = "$env:TEMP\plink.exe"
+    $Pscp = "$env:TEMP\pscp.exe"
+    $ProjectRoot = Split-Path $PSScriptRoot -Parent
+
+    function Run-Remote($cmd) {
+      & $Plink -ssh -pw $Pass -no-antispoof -batch "${User}@${ServerIp}" $cmd 2>&1
+    }
+
+    function Deploy-Backend {
+      Write-Host ">>> Deploying backend..." -ForegroundColor Cyan
+      $tmp = "$env:TEMP\iot-backend.tar.gz"
+      tar -czf $tmp --exclude="node_modules" -C $ProjectRoot backend 2>&1
+      & $Pscp -pw $Pass -batch $tmp "${User}@${ServerIp}:${RemoteDir}/" 2>&1
+      Run-Remote "cd $RemoteDir && tar xzf iot-backend.tar.gz && rm -f iot-backend.tar.gz && cd backend && npm install --omit=dev && pm2 restart iot-backend"
+      Write-Host ">>> Backend done!" -ForegroundColor Green
+    }
+
+    function Deploy-Frontend {
+      Write-Host ">>> Deploying frontend..." -ForegroundColor Cyan
+      $tmp = "$env:TEMP\iot-frontend.tar.gz"
+      tar -czf $tmp --exclude="node_modules" --exclude="dist" -C $ProjectRoot frontend 2>&1
+      & $Pscp -pw $Pass -batch $tmp "${User}@${ServerIp}:${RemoteDir}/" 2>&1
+      Run-Remote "cd $RemoteDir && tar xzf iot-frontend.tar.gz && rm -f iot-frontend.tar.gz && cd frontend && npm install && npx vite build"
+      Write-Host ">>> Frontend done!" -ForegroundColor Green
+    }
+
+    switch ($Target) {
+      "backend"  { Deploy-Backend }
+      "frontend" { Deploy-Frontend }
+      "all"      { Deploy-Backend; Deploy-Frontend }
+      default    { Write-Host "Usage: .\deploy.ps1 [backend|frontend|all]" }
+    }
+
+    Write-Host ">>> Deployment complete!" -ForegroundColor Green
+
+  USAGE (PowerShell from project root):
+    .\deploy\deploy.ps1 all         # Deploy backend + frontend
+    .\deploy\deploy.ps1 backend     # Deploy only backend
+    .\deploy\deploy.ps1 frontend    # Deploy only frontend
+
+  6.2 LINUX/MAC — deploy.sh
+  ──────────────────────────────────────────────────────────────────────────────
+  Save this as deploy/deploy.sh (requires sshpass installed: apt install sshpass):
+
+    #!/bin/bash
+    TARGET=${1:-all}
+    SERVER_IP="<YOUR_SERVER_IP>"
+    USER="root"
+    PASS="<YOUR_SERVER_PASSWORD>"
+    REMOTE_DIR="/opt/iot"
+    PROJECT_ROOT=$(dirname "$(dirname "$0")")
+
+    deploy_backend() {
+      echo ">>> Deploying backend..."
+      tar -czf /tmp/iot-backend.tar.gz --exclude="node_modules" -C "$PROJECT_ROOT" backend
+      sshpass -p "$PASS" scp /tmp/iot-backend.tar.gz "${USER}@${SERVER_IP}:${REMOTE_DIR}/"
+      sshpass -p "$PASS" ssh "${USER}@${SERVER_IP}" "cd $REMOTE_DIR && tar xzf iot-backend.tar.gz && rm -f iot-backend.tar.gz && cd backend && npm install --omit=dev && pm2 restart iot-backend"
+      echo ">>> Backend done!"
+    }
+
+    deploy_frontend() {
+      echo ">>> Deploying frontend..."
+      tar -czf /tmp/iot-frontend.tar.gz --exclude="node_modules" --exclude="dist" -C "$PROJECT_ROOT" frontend
+      sshpass -p "$PASS" scp /tmp/iot-frontend.tar.gz "${USER}@${SERVER_IP}:${REMOTE_DIR}/"
+      sshpass -p "$PASS" ssh "${USER}@${SERVER_IP}" "cd $REMOTE_DIR && tar xzf iot-frontend.tar.gz && rm -f iot-frontend.tar.gz && cd frontend && npm install && npx vite build"
+      echo ">>> Frontend done!"
+    }
+
+    case "$TARGET" in
+      backend)  deploy_backend ;;
+      frontend) deploy_frontend ;;
+      all)      deploy_backend; deploy_frontend ;;
+      *)        echo "Usage: ./deploy.sh [backend|frontend|all]" ;;
+    esac
+
+    echo ">>> Deployment complete!"
+
+  USAGE (from project root, in Bash):
+    chmod +x deploy/deploy.sh
+    ./deploy/deploy.sh all
+
+  6.3 WHAT THE DEPLOY SCRIPTS DO
+  ──────────────────────────────────────────────────────────────────────────────
+  Step 1 — Archive:
+    Creates a .tar.gz of backend/ or frontend/ excluding node_modules/ and dist/
+
+  Step 2 — Upload:
+    Uses SCP (pscp.exe / scp) to upload the archive to /opt/iot/ on the server
+
+  Step 3 — Remote commands (executed via SSH):
+    Backend:  extract → npm install --omit=dev → pm2 restart iot-backend
+    Frontend: extract → npm install → npx vite build
+
+  NOTE: The first deployment takes longer because npm install downloads all
+  dependencies. Subsequent deploys are faster since node_modules already exists.
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 7 — FIRST-TIME DEPLOYMENT (Step by Step)
+████████████████████████████████████████████████████████████████████████████████
+
+  Perform these steps ONCE after server setup is complete.
+
+  7.1 UPLOAD NGINX CONFIG
+  ──────────────────────────────────────────────────────────────────────────────
+  From Windows PowerShell:
+    & "$env:TEMP\pscp.exe" -pw "<password>" deploy/nginx.conf root@<ip>:/etc/nginx/sites-available/iot
+
+  From Linux/Mac:
+    sshpass -p "<password>" scp deploy/nginx.conf root@<ip>:/etc/nginx/sites-available/iot
+
+  Then SSH in and enable it:
+    ln -sf /etc/nginx/sites-available/iot /etc/nginx/sites-enabled/
+    rm -f /etc/nginx/sites-enabled/default
+    nginx -t && systemctl reload nginx
+
+  7.2 DEPLOY BACKEND FOR FIRST TIME
+  ──────────────────────────────────────────────────────────────────────────────
+  From project root, run:
+    .\deploy\deploy.ps1 backend
+
+  After it completes, register the PM2 process (SSH into server):
+    pm2 start /opt/iot/backend/src/server.js --name iot-backend
+    pm2 save
+
+  7.3 DEPLOY FRONTEND FOR FIRST TIME
+  ──────────────────────────────────────────────────────────────────────────────
+  From project root, run:
+    .\deploy\deploy.ps1 frontend
+
+  After it completes, reload Nginx:
+    systemctl reload nginx
+
+  7.4 VERIFY DEPLOYMENT
+  ──────────────────────────────────────────────────────────────────────────────
+  Open in browser: http://<your-server-ip>
+  API should respond at: http://<your-server-ip>/api
+  API health check: http://<your-server-ip>/api/health
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 8 — CI/CD WITH GITHUB ACTIONS
+████████████████████████████████████████████████████████████████████████████████
+
+  8.1 CREATE GITHUB REPOSITORY
+  ──────────────────────────────────────────────────────────────────────────────
+  Option A — Create new repo on GitHub, then push:
+    cd your-project
+    git init
+    git add .
+    git commit -m "Initial commit"
+    git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+    git branch -M main
+    git push -u origin main
+
+  Option B — If code is not in git yet:
+    Same as above. Just make sure .gitignore includes:
+      node_modules/
+      dist/
+      .env
+      *.log
+
+  8.2 ADD GITHUB SECRET
+  ──────────────────────────────────────────────────────────────────────────────
+  In your GitHub repo:
+    Settings → Secrets and variables → Actions → New repository secret
+    Name: CONTABO_SSH_PASSWORD
+    Value: <your-server-root-password>
+
+  8.3 CREATE WORKFLOW FILE
+  ──────────────────────────────────────────────────────────────────────────────
+  Create .github/workflows/deploy.yml in your project root:
+
+    name: Deploy to Contabo VPS
+
+    on:
+      push:
+        branches: [main]
+
+    jobs:
+      deploy:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v4
+
+          - name: Setup Node.js
+            uses: actions/setup-node@v4
+            with:
+              node-version: 22
+
+          - name: Build frontend
+            run: |
+              cd frontend
+              npm ci
+              npx vite build
+
+          - name: Deploy via SSH
+            uses: appleboy/ssh-action@v1.0.3
+            with:
+              host: <YOUR_SERVER_IP>
+              username: root
+              password: ${{ secrets.CONTABO_SSH_PASSWORD }}
+              port: 22
+              script: |
+                cd /opt/iot
+                git pull origin main
+                cd backend && npm ci --production && pm2 restart iot-backend --update-env
+                cd ../frontend && npx vite build
+                systemctl reload nginx
+
+  Push the workflow file to GitHub:
+    git add .github/
+    git commit -m "Add GitHub Actions CI/CD"
+    git push
+
+  After pushing to main, the workflow runs automatically. Check progress at:
+    GitHub → Your Repo → Actions tab
+
+  8.4 USING DEPLOY SCRIPTS AS POST-COMMIT HOOK (Alternative CI/CD)
+  ──────────────────────────────────────────────────────────────────────────────
+  If you don't want GitHub Actions, you can run locally after each commit:
+    git push
+    .\deploy\deploy.ps1 all
+
+  Or create a simple batch file deploy-now.bat:
+    @echo off
+    cd /d C:\path\to\your-project
+    git pull
+    .\deploy\deploy.ps1 all
+    pause
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 9 — MANUAL SSH & FILE TRANSFER COMMANDS
+████████████████████████████████████████████████████████████████████████████████
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ OPERATION             │ WINDOWS (PowerShell)                               │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ SSH into server       │ & "$env:TEMP\plink.exe" -ssh -pw "<pass>"          │
+  │                       │     root@<ip>                                      │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Run command           │ & "$env:TEMP\plink.exe" -ssh -pw "<pass>"          │
+  │                       │     -batch root@<ip> "command"                     │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Upload file           │ & "$env:TEMP\pscp.exe" -pw "<pass>"                │
+  │                       │     local.txt root@<ip>:/remote/path/              │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Upload folder         │ & "$env:TEMP\pscp.exe" -pw "<pass>" -r             │
+  │                       │     folder/* root@<ip>:/remote/path/               │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Download file         │ & "$env:TEMP\pscp.exe" -pw "<pass>"                │
+  │                       │     root@<ip>:/remote/file.txt local-dest/         │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ OPERATION             │ LINUX/MAC (Bash)                                   │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ SSH into server       │ ssh root@<ip>                                      │
+  │ Run command           │ ssh root@<ip> "command"                            │
+  │ Upload file           │ sshpass -p "<pass>" scp file root@<ip>:/path/      │
+  │ Upload folder         │ sshpass -p "<pass>" scp -r folder root@<ip>:/path/ │
+  │ Download file         │ sshpass -p "<pass>" scp root@<ip>:/path/file ./    │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 10 — COMMON SERVER COMMANDS
+████████████████████████████████████████████████████████████████████████████████
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ TASK                    │ COMMAND                                          │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Deploy all              │ .\deploy\deploy.ps1 all                          │
+  │ Deploy backend          │ .\deploy\deploy.ps1 backend                      │
+  │ Deploy frontend         │ .\deploy\deploy.ps1 frontend                     │
+  │ Restart backend         │ pm2 restart iot-backend --update-env             │
+  │ Stop backend            │ pm2 stop iot-backend                             │
+  │ View backend logs       │ pm2 logs iot-backend --lines 50 --nostream       │
+  │ List PM2 processes      │ pm2 status                                       │
+  │ Save PM2 process list   │ pm2 save                                         │
+  │ Reload Nginx            │ systemctl reload nginx                           │
+  │ Test Nginx config       │ nginx -t                                         │
+  │ Check MongoDB           │ systemctl status mongod                          │
+  │ Check Nginx             │ systemctl status nginx                           │
+  │ Open MongoDB shell      │ mongosh your-db-name                             │
+  │ View MongoDB logs       │ journalctl -u mongod --no-pager -n 30            │
+  │ View Nginx logs         │ tail -f /var/log/nginx/access.log                │
+  │ View Nginx errors       │ tail -f /var/log/nginx/error.log                 │
+  │ Check disk space        │ df -h                                            │
+  │ Check memory            │ free -h                                          │
+  │ Check port listeners    │ ss -tlnp                                         │
+  │ Search logs for errors  │ journalctl -u pm2-root --no-pager -n 50 | grep -i error │
+  │ Reboot server           │ reboot                                           │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 11 — TROUBLESHOOTING
+████████████████████████████████████████████████████████████████████████████████
+
+  PROBLEM: Browser shows "502 Bad Gateway"
+  CAUSE:   Nginx can't reach the backend (port 5000)
+  FIX:     ssh root@<ip> "pm2 restart iot-backend && systemctl reload nginx"
+
+  PROBLEM: "ECONNREFUSED ::1:27017" in backend logs
+  CAUSE:   MongoDB is not running
+  FIX:     ssh root@<ip> "systemctl start mongod"
+
+  PROBLEM: Frontend shows blank page (404 on refresh)
+  CAUSE:   Nginx doesn't have the SPA fallback rule
+  FIX:     Ensure `try_files $uri $uri/ /index.html;` is in the nginx config
+
+  PROBLEM: "EADDRINUSE" on port 5000
+  CAUSE:   PM2 has a zombie process
+  FIX:     ssh root@<ip> "fuser -k 5000/tcp && pm2 restart iot-backend"
+
+  PROBLEM: npm install fails on server
+  CAUSE:   Out of memory (especially on small VPS plans)
+  FIX:     ssh root@<ip> "fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo '/swapfile none swap sw 0 0' >> /etc/fstab"
+
+  PROBLEM: pm2 process not found after reboot
+  CAUSE:   pm2 startup not configured
+  FIX:     ssh root@<ip> "pm2 startup systemd && pm2 save"
+
+  PROBLEM: Deploy script hangs at "npm install"
+  CAUSE:   npm install takes 30-60+ seconds on the server. This is normal.
+  FIX:     Wait. Or break the command into separate SSH calls for visibility.
+
+  PROBLEM: API returns 404 for /api routes
+  CAUSE:   Nginx location block missing trailing slash or backend not listening
+  FIX:     Check `proxy_pass http://127.0.0.1:5000;` in nginx config (with/without /)
+          Check backend is listening: ssh root@<ip> "ss -tlnp | grep 5000"
+
+  PROBLEM: GitHub Actions deploy fails with "Host key verification failed"
+  CAUSE:   First-time SSH connection to server needs host key acceptance
+  FIX:     Add to workflow: `- run: ssh-keyscan -H <ip> >> ~/.ssh/known_hosts`
+          Or use: `with: fingerprint: ${{ secrets.SSH_FINGERPRINT }}`
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 12 — QUICK START (Copy-Paste for New Projects)
+████████████████████████████████████████████████████████████████████████████████
+
+  12.1 ONE-TIME SERVER SETUP (run these in order via SSH)
+  ──────────────────────────────────────────────────────────────────────────────
+    apt update && apt upgrade -y
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    apt install -y nodejs nginx
+    npm install -g pm2
+    pm2 startup systemd
+    # Install MongoDB (see Section 3.3)
+    mkdir -p /opt/iot/backend /opt/iot/frontend
+
+  12.2 ONE-TIME NGINX SETUP
+  ──────────────────────────────────────────────────────────────────────────────
+    # Upload nginx.conf to /etc/nginx/sites-available/iot
+    ln -sf /etc/nginx/sites-available/iot /etc/nginx/sites-enabled/
+    rm -f /etc/nginx/sites-enabled/default
+    nginx -t && systemctl reload nginx
+
+  12.3 FIRST DEPLOYMENT
+  ──────────────────────────────────────────────────────────────────────────────
+    .\deploy\deploy.ps1 backend     # Upload & install backend
+    ssh root@<ip> "pm2 start /opt/iot/backend/src/server.js --name iot-backend && pm2 save"
+    .\deploy\deploy.ps1 frontend    # Upload & build frontend
+    ssh root@<ip> "systemctl reload nginx"
+
+  12.4 SUBSEQUENT DEPLOYS (after code changes)
+  ──────────────────────────────────────────────────────────────────────────────
+    .\deploy\deploy.ps1 all         # Deploy everything in one command
+
+
+████████████████████████████████████████████████████████████████████████████████
+  SECTION 13 — SECURITY NOTES
+████████████████████████████████████████████████████████████████████████████████
+
+  ⚠ PASSWORDS IN SCRIPTS: The deploy.ps1 and deploy.sh contain plain-text
+    passwords. Do NOT commit them to a public GitHub repo. Either:
+    - Add deploy/* to .gitignore
+    - Use environment variables instead of hardcoded values
+    - Switch to SSH key authentication
+
+  ⚠ MONGODB: Keep bound to 127.0.0.1. Do not expose to the internet.
+    Use SSH tunnel if you need remote access.
+
+  ⚠ JWT SECRET: Use a strong random secret. Never commit .env to git.
+
+  ⚠ FIREWALL: Consider using ufw:
+    ufw allow 22/tcp        # SSH
+    ufw allow 80/tcp        # HTTP (Nginx)
+    ufw allow 443/tcp       # HTTPS (if using SSL)
+    ufw deny 5000           # Block direct backend access
+    ufw deny 4000           # Block direct Socket.IO access
+    ufw deny 27017          # Block MongoDB from outside
+    ufw enable
+
+  ⚠ SSL/HTTPS: For production, use Let's Encrypt:
+    apt install -y certbot python3-certbot-nginx
+    certbot --nginx -d yourdomain.com
+
+
+================================================================================
+  END OF REFERENCE — Any AI agent can follow this to deploy a MERN app
+================================================================================
+  Template placeholders to replace:
+    <your-server-ip>        → Your Contabo VPS IP
+    <password>              → Your root password
+    <your-db-name>          → Your MongoDB database name
+    YOUR_USER / YOUR_REPO   → Your GitHub username and repo name
+================================================================================
