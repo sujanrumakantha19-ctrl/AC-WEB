@@ -108,21 +108,21 @@ export async function sendWelcomeMessageToUser(userId: string) {
   if (!user) return { sent: false };
 
   if (user.whatsAppGroupLinkSent) return { sent: false };
-  if (user.whatsAppGroupPending) return { sent: false };
-  if (!user.whatsAppGroup || !user.phone) return { sent: false };
+  if (!user.phone) return { sent: false };
 
-  const group = await WhatsAppGroup.findById(user.whatsAppGroup).exec();
-  if (!group || group.status !== "active") {
-    user.whatsAppGroupPending = true;
-    await user.save();
-    return { sent: false };
+  let groupLink = "";
+  if (user.whatsAppGroup) {
+    const group = await WhatsAppGroup.findById(user.whatsAppGroup).exec();
+    if (group && group.status === "active") {
+      groupLink = group.link;
+    }
   }
 
-  await sendWhatsAppWelcomeMessage(user.name, user.phone, group.link);
+  await sendWhatsAppWelcomeMessage(user.name, user.phone, groupLink);
   user.whatsAppGroupLinkSent = true;
   await user.save();
 
-  return { sent: true, link: group.link };
+  return { sent: true, link: groupLink };
 }
 
 /**
