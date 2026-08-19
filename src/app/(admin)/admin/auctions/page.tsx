@@ -13,13 +13,13 @@ import type { SerializedAuction } from "@/types";
 
 const PAGE_SIZE = 12;
 
-type FilterStatus = "ALL" | "LIVE" | "UPCOMING";
+type FilterStatus = "ALL" | "LIVE" | "UPCOMING" | "PARKING";
 
 export default function AdminAllAuctionsPage() {
   const searchParams = useSearchParams();
   const initialStatus = (searchParams.get("status") || "ALL").toUpperCase();
   const [filterStatus, setFilterStatus] = useState<FilterStatus>(
-    ["ALL", "LIVE", "UPCOMING"].includes(initialStatus) ? (initialStatus as FilterStatus) : "ALL"
+    ["ALL", "LIVE", "UPCOMING", "PARKING"].includes(initialStatus) ? (initialStatus as FilterStatus) : "ALL"
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState<SerializedAuction[]>([]);
@@ -32,16 +32,23 @@ export default function AdminAllAuctionsPage() {
   const [getAuctions] = useLazyGetAuctionsQuery();
   const { data: liveCountData } = useGetAuctionsQuery({ status: "LIVE", limit: 1 });
   const { data: upcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", limit: 1 });
+  const { data: parkingLiveCountData } = useGetAuctionsQuery({ status: "LIVE", parkingSale: true, limit: 1 });
+  const { data: parkingUpcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", parkingSale: true, limit: 1 });
 
   const tabCounts = {
     ALL: (liveCountData?.total || 0) + (upcomingCountData?.total || 0),
     LIVE: liveCountData?.total || 0,
     UPCOMING: upcomingCountData?.total || 0,
+    PARKING: (parkingLiveCountData?.total || 0) + (parkingUpcomingCountData?.total || 0),
   };
 
   const loadPage = useCallback(
     async (s: FilterStatus, p: number) => {
-      const res = await getAuctions({ status: s === "ALL" ? undefined : s, limit: PAGE_SIZE, page: p });
+      const res = await getAuctions(
+        s === "PARKING"
+          ? { parkingSale: true, limit: PAGE_SIZE, page: p }
+          : { status: s === "ALL" ? undefined : s, limit: PAGE_SIZE, page: p }
+      );
       return res.data?.auctions || [];
     },
     [getAuctions]
@@ -112,9 +119,9 @@ export default function AdminAllAuctionsPage() {
       </div>
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex flex-nowrap bg-surface-container rounded-full p-1 whitespace-nowrap overflow-x-auto">
-          {(["ALL", "LIVE", "UPCOMING"] as const).map((s) => (
+          {(["ALL", "LIVE", "UPCOMING", "PARKING"] as const).map((s) => (
             <button key={s} onClick={() => setFilterStatus(s)} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${filterStatus === s ? "bg-white shadow-sm text-primary" : "text-on-surface-variant hover:text-primary"}`}>
-              {s === "ALL" ? "All" : s} <span className="opacity-60">({tabCounts[s]})</span>
+              {s === "ALL" ? "All" : s === "PARKING" ? "Parking Sale" : s} <span className="opacity-60">({tabCounts[s]})</span>
             </button>
           ))}
         </div>
@@ -138,8 +145,9 @@ export default function AdminAllAuctionsPage() {
           {filtered.map((a: SerializedAuction) => (
             <div key={a._id || a.id} className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between">
               <div className="relative h-48 w-full overflow-hidden bg-black/5">
-                <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none flex flex-col items-start gap-1.5">
                   <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>{a.status}</Badge>
+                  {a.isParkingSale && <Badge variant="new">Parking Sale</Badge>}
                 </div>
                 <ImageWithGallery src={a.image || ""} alt={a.title} images={a.images} imgClassName="group-hover:scale-105 transition-transform duration-500" />
               </div>

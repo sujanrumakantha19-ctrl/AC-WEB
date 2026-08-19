@@ -5,8 +5,6 @@ const SMTP_PORT = parseInt(process.env.SMTP_PORT || "465", 10);
 const SMTP_SECURE = process.env.SMTP_SECURE !== "false";
 const SMTP_USER = process.env.SMTP_USER || "sujanrumakantha19@gmail.com";
 const SMTP_PASS = process.env.SMTP_PASS || "mveajivirjuurcza";
-const EMAIL_FROM = process.env.EMAIL_FROM || `"VKS Autoservices" <${SMTP_USER}>`;
-
 export const transporter = nodemailer.createTransport({
   host: SMTP_HOST,
   port: SMTP_PORT,
@@ -55,7 +53,7 @@ export async function sendResetOtpEmail({
   `;
 
   await transporter.sendMail({
-    from: EMAIL_FROM,
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
     to,
     subject: `Your Password Reset Verification Code: ${otp} - VKS Autoservices`,
     html: htmlContent,

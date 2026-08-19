@@ -11,25 +11,35 @@ import type { SerializedAuction } from "@/types";
 
 export default function AdminCompletedAuctionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [parkingOnly, setParkingOnly] = useState(false);
 
   const { data, isLoading } = useGetAuctionsQuery({ status: "ENDED", limit: 100 });
   const auctions = data?.auctions || [];
 
   const filtered = auctions.filter((a: SerializedAuction) =>
-    !searchQuery ||
+    (parkingOnly ? !!a.isParkingSale : true) &&
+    (!searchQuery ||
     a.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.lotNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+    a.lotNumber?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <input
-          className="h-9 rounded-xl px-3 text-xs font-medium max-w-xs w-full border border-primary focus:outline-none focus:border-primary"
-          placeholder="Search by title or lot ID..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <input
+            className="h-9 rounded-xl px-3 text-xs font-medium max-w-xs w-full border border-primary focus:outline-none focus:border-primary"
+            placeholder="Search by title or lot ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button
+            onClick={() => setParkingOnly((v) => !v)}
+            className={`h-9 px-3 rounded-xl text-xs font-bold border transition-all whitespace-nowrap ${parkingOnly ? "border-primary bg-primary/10 text-primary" : "border-outline-variant/40 text-on-surface-variant hover:border-primary"}`}
+          >
+            Parking Sale
+          </button>
+        </div>
         <Badge variant="secondary" className="!bg-primary !text-white border border-primary">{auctions.length} Completed</Badge>
       </div>
 
@@ -42,8 +52,9 @@ export default function AdminCompletedAuctionsPage() {
           {filtered.map((a: SerializedAuction) => (
             <div key={a._id || a.id} className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between">
               <div className="relative h-48 w-full overflow-hidden bg-black/5">
-                <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none flex flex-col items-start gap-1.5">
                   <Badge variant="secondary">ENDED</Badge>
+                  {a.isParkingSale && <Badge variant="new">Parking Sale</Badge>}
                 </div>
                 <ImageWithGallery src={a.image || ""} alt={a.title} images={a.images} imgClassName="group-hover:scale-105 transition-transform duration-500" />
               </div>

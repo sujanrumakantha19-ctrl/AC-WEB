@@ -54,8 +54,8 @@ export function AppFooter() {
             Need Assistance?
           </h4>
           <p className="text-body-md text-white/80">24/7 Offering Hotline:</p>
-          <p className="text-headline-md font-bold text-on-primary-container">+91 1800-200-BHARAT</p>
-          <p className="text-label-sm text-white/60">support@bharatauctions.com</p>
+          <p className="text-headline-md font-bold text-on-primary-container">+91 90039 91351</p>
+          <p className="text-label-sm text-white/60">support@vksautoserviceauctions.com</p>
         </div>
       </div>
 

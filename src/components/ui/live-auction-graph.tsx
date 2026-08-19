@@ -118,7 +118,7 @@ export function LiveAuctionGraph() {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-sm font-extrabold">Offer Progression · Live Now</h3>
-            <p className="text-[11px] text-on-surface-variant">Latest offer every time a bidder places one</p>
+            <p className="text-[11px] text-on-surface-variant">Latest offer every time a participant places one</p>
           </div>
           <div className="text-right">
             <p className="text-lg font-extrabold text-primary">{formatINR(previousOffer)}</p>

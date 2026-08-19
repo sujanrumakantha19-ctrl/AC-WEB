@@ -8,6 +8,7 @@ import { INDIA_CITIES, INDIA_STATES, COUNTRIES, CITY_STATE } from "@/data/locati
 import { useGetMeQuery, useUpdateMeMutation, useChangePasswordMutation } from "@/services/auth-api";
 import { useUploadImageMutation } from "@/services/upload-api";
 import { errorMessage } from "@/lib/helpers";
+import { compressImage } from "@/lib/compress-image";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { toggleTheme } from "@/redux/slices/themeSlice";
 
@@ -48,10 +49,10 @@ export default function UserProfilePage() {
 
   const user = meData?.user;
 
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+  const passwordRegex = /^.{8,}$/;
   const newPasswordPolicyError =
     newPassword && !passwordRegex.test(newPassword)
-      ? "Must have 8+ characters with uppercase, lowercase, number and special symbol"
+      ? "Password must be at least 8 characters long"
       : "";
   const newPasswordMatchError =
     confirmNewPassword && newPassword !== confirmNewPassword ? "Passwords do not match" : "";
@@ -88,7 +89,7 @@ export default function UserProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", await compressImage(file));
     setUploadingAvatar(true);
     setError("");
     try {
@@ -141,7 +142,7 @@ export default function UserProfilePage() {
       return;
     }
     if (!passwordRegex.test(newPassword)) {
-      setPasswordErr("New password must have 8+ characters with uppercase, lowercase, number and special symbol");
+      setPasswordErr("New password must be at least 8 characters long");
       return;
     }
     if (newPassword !== confirmNewPassword) {

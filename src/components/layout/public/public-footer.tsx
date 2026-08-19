@@ -43,9 +43,8 @@ export function PublicFooter() {
           <Link href="/about" className="text-on-surface-variant hover:text-primary transition-colors">About Us</Link>
           <Link href="/terms" className="text-on-surface-variant hover:text-primary transition-colors">Terms &amp; Conditions</Link>
           <Link href="/legal-privacy" className="text-on-surface-variant hover:text-primary transition-colors">Legal &amp; Privacy</Link>
-          <Link href="/delivery-policy" className="text-on-surface-variant hover:text-primary transition-colors">Delivery Policy</Link>
           <Link href="/refund-policy" className="text-on-surface-variant hover:text-primary transition-colors">Refund Policy</Link>
-          <span className="text-on-surface-variant">Auction Rules</span>
+          <Link href="/auction-rules" className="text-on-surface-variant hover:text-primary transition-colors">Auction Rules</Link>
         </div>
       </div>
     </footer>

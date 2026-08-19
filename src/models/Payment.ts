@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUND_PENDING" | "REFUNDED";
 
 export interface IPayment extends Document {
   user: mongoose.Types.ObjectId;
@@ -11,8 +11,12 @@ export interface IPayment extends Document {
   amount: number;
   currency: string;
   receipt?: string;
-  status: PaymentStatus;
+  status?: PaymentStatus;
   failureReason?: string;
+  refundId?: string;
+  refundInitiatedAt?: Date;
+  refundedAt?: Date;
+  refundError?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,11 +33,15 @@ const PaymentSchema = new Schema<IPayment>(
     receipt: { type: String },
     status: {
       type: String,
-      enum: ["PENDING", "PAID", "FAILED", "REFUNDED"],
+      enum: ["PENDING", "PAID", "FAILED", "REFUND_PENDING", "REFUNDED"],
       default: "PENDING",
       index: true,
     },
     failureReason: { type: String },
+    refundId: { type: String },
+    refundInitiatedAt: { type: Date },
+    refundedAt: { type: Date },
+    refundError: { type: String },
   },
   { timestamps: true }
 );

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
 import { ok, badRequest, route, requireAdmin, notFound } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
+import { syncRefundSettlements } from "@/lib/razorpay-sync";
 import { broadcastAuctionEvent } from "@/lib/auction-ws";
 import { notifyRoundStarted, notifyRoundEnded, notifyAuctionEnded } from "@/lib/round-state-sync";
 
@@ -98,11 +99,16 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
 
   await auction.save();
 
-  if (auction.status === "ENDED" && auction.winner) {
+  if (auction.status === "ENDED") {
     try {
       await processAuctionRefunds(id);
     } catch (err) {
       console.error("[auction-refunds] round-control: failed to process", id, err);
+    }
+    try {
+      await syncRefundSettlements();
+    } catch (err) {
+      console.error("[auction-refunds] round-control: refund settlement failed", id, err);
     }
   }
 

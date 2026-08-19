@@ -26,7 +26,7 @@ export const ENDPOINTS = {
     changePassword: api("/api/auth/change-password"),
   },
   auctions: {
-    list: (params?: { status?: string; limit?: number; page?: number } | void) =>
+    list: (params?: { status?: string; parkingSale?: boolean; limit?: number; page?: number } | void) =>
       `${api("/api/auctions")}${toQuery(params ?? undefined)}`,
     create: api("/api/auctions"),
     get: (id: string) => api(`/api/auctions/${id}`),

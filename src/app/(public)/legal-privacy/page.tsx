@@ -6,7 +6,7 @@ export default function LegalPrivacyPage() {
       {/* Header */}
       <div className="space-y-3">
         <h1 className="text-2xl md:text-3xl font-extrabold text-on-background">Legal &amp; Privacy Disclaimer Policy</h1>
-        <p className="text-xs md:text-sm text-on-surface-variant">Last updated on Nov 23rd, 2025</p>
+        <p className="text-xs md:text-sm text-on-surface-variant">Last updated on Aug 19th, 2026</p>
       </div>
 
       {/* ============================ LEGAL DISCLAIMER ============================ */}
@@ -15,9 +15,10 @@ export default function LegalPrivacyPage() {
 
         <section className="bg-white rounded-2xl p-5 border border-outline-variant/30 shadow-xs space-y-2">
           <p className="text-sm text-on-surface-variant leading-relaxed">
-            VKS AUTO SERVICES is a vehicle verification and information provider platform. We are{" "}
-            <span className="font-extrabold text-on-surface">NOT</span> an auction company and do not
-            conduct bidding or online vehicle sales.
+            VKS AUTO SERVICES operates an online vehicle auction platform where registered and verified
+            customers place offers on vehicles across scheduled auction rounds. We are{" "}
+            <span className="font-extrabold text-on-surface">NOT</span> a vehicle dealer and do not buy
+            or sell vehicles ourselves.
           </p>
         </section>
 
@@ -27,6 +28,10 @@ export default function LegalPrivacyPage() {
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
               <span>We collect and share verified vehicle information, including photos, documents, RC, insurance, service history, and owner-provided details.</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
+              <span>We conduct and manage online vehicle auctions in scheduled rounds, where verified customers place offers on vehicles.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
@@ -70,11 +75,11 @@ export default function LegalPrivacyPage() {
           <ul className="space-y-1.5 text-sm text-on-surface-variant leading-relaxed">
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-              <span>Registration fee is collected only for identity verification + vehicle information service.</span>
+              <span>A Registration Fee of ₹599 per auction is collected to participate in that auction.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-              <span>This fee is <span className="font-extrabold text-error">100% NON-REFUNDABLE</span>.</span>
+              <span>This fee is refundable only in the circumstances described in the Refund Policy.</span>
             </li>
           </ul>
         </section>
@@ -180,7 +185,7 @@ export default function LegalPrivacyPage() {
         <section className="bg-white rounded-2xl p-5 border border-outline-variant/30 shadow-xs space-y-2">
           <h3 className="text-sm font-extrabold text-on-surface">Payment Information</h3>
           <p className="text-sm text-on-surface-variant leading-relaxed">
-            All payments are processed securely through ONLINE PAYMENT. We do not store your:
+            All payments are processed securely through Razorpay. We do not store your:
           </p>
           <ul className="space-y-1.5 text-sm text-on-surface-variant leading-relaxed">
             <li className="flex gap-2">
@@ -201,7 +206,7 @@ export default function LegalPrivacyPage() {
             </li>
           </ul>
           <p className="text-sm text-on-surface-variant leading-relaxed">
-            ONLINE PAYMENT handles all financial data with 256-bit encryption.
+            Razorpay handles all financial data with 256-bit encryption.
           </p>
         </section>
 
@@ -259,7 +264,7 @@ export default function LegalPrivacyPage() {
             </li>
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-              <span>ONLINE PAYMENT (Payment verification)</span>
+              <span>Razorpay (Payment verification)</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />

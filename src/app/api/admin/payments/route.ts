@@ -1,9 +1,41 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import User from "@/models/User";
-import Auction from "@/models/Auction";
-import Setting from "@/models/Setting";
-import { getCusId } from "@/lib/utils";
+import Payment from "@/models/Payment";
+
+type PopulatedPayment = {
+  _id: unknown;
+  orderId: string;
+  paymentId?: string;
+  amount?: number;
+  status?: string;
+  failureReason?: string;
+  refundId?: string;
+  refundInitiatedAt?: Date;
+  refundedAt?: Date;
+  refundError?: string;
+  createdAt: Date;
+  user?: { _id?: unknown; name?: string; cusId?: string; phone?: string; email?: string; city?: string };
+  auction?: { _id?: unknown; title?: string; lotNumber?: string };
+};
+
+type AdminPaymentTransaction = {
+  txnId: string;
+  user: { _id?: unknown; name?: string; cusId?: string; phone?: string; email?: string; city?: string };
+  auction: { _id?: unknown; lotNumber: string; title: string };
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  date: string;
+  failureReason?: string;
+  orderId?: string;
+  paymentId?: string;
+  refundId?: string;
+  refundInitiatedAt?: Date;
+  refundedAt?: Date;
+};
+
+const fmtTxnId = (orderId: string, suffix: string) =>
+  `TXN-${suffix}${orderId.replace(/^order_/, "").slice(-8).toUpperCase()}`;
 
 export async function GET(request: Request) {
   try {
@@ -11,113 +43,56 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     const search = searchParams.get("search") || "";
-    const statusFilter = searchParams.get("status") || "ALL"; // ALL | SUCCESS | REFUNDED | FAILED | PENDING
+    const statusFilter = searchParams.get("status") || "ALL"; // ALL | PAID | REFUND_PENDING | REFUNDED | FAILED | PENDING
     const lotFilter = searchParams.get("lot") || ""; // auction lot number filter
 
-    // Fetch users with paidAccessAuctions and refundedAuctions populated
-    const users = await User.find({ role: "user" })
-      .populate("paidAccessAuctions", "title lotNumber registrationFee createdAt")
-      .populate("refundedAuctions", "_id")
-      .lean();
+    const payments = (await Payment.find({})
+      .populate("user", "name cusId phone email city")
+      .populate("auction", "title lotNumber")
+      .sort({ createdAt: -1 })
+      .lean()) as unknown as PopulatedPayment[];
 
-    const auctions = await Auction.find({}).lean();
+    const paymentTransactions: AdminPaymentTransaction[] = [];
 
-    const regFeeSetting = await Setting.findOne({ key: "registrationFee" }).lean() as any;
-    const defaultFee = regFeeSetting ? parseInt(regFeeSetting.value || "5000") : 5000;
+    payments.forEach((p, idx) => {
+      const user = p.user || {};
+      const auction = p.auction || {};
+      const status = p.status || "PENDING";
 
-    const paymentTransactions: any[] = [];
-    let txIndex = 1000;
+      const txDate =
+        status === "REFUNDED"
+          ? p.refundedAt || p.createdAt
+          : status === "REFUND_PENDING"
+            ? p.refundInitiatedAt || p.createdAt
+            : p.createdAt;
 
-    users.forEach((u: any, uIdx: number) => {
-      const paidAuctions = u.paidAccessAuctions || [];
-      const refundedSet = new Set((u.refundedAuctions || []).map((ra: any) => String(ra._id || ra)));
-
-      paidAuctions.forEach((auc: any) => {
-        const isRefunded = refundedSet.has(String(auc._id));
-        txIndex += 1;
-
-        const txDate = auc.createdAt ? new Date(auc.createdAt) : new Date(u.createdAt || Date.now());
-
-        paymentTransactions.push({
-          txnId: `TXN-${txIndex}`,
-          user: {
-            _id: u._id,
-            name: u.name,
-            cusId: getCusId(u),
-            phone: u.phone,
-            email: u.email,
-            city: u.city,
-          },
-          auction: {
-            _id: auc._id,
-            lotNumber: auc.lotNumber || "LOT-XXXX",
-            title: auc.title || "Vehicle Auction",
-          },
-          amount: auc.registrationFee || defaultFee,
-          paymentMethod: txIndex % 2 === 0 ? "UPI / PhonePe" : "Razorpay Online",
-          status: isRefunded ? "REFUNDED" : "SUCCESS",
-          date: txDate.toISOString(),
-        });
+      paymentTransactions.push({
+        txnId: fmtTxnId(p.orderId || "", String(idx + 1)),
+        user: {
+          _id: user._id,
+          name: user.name,
+          cusId: user.cusId,
+          phone: user.phone,
+          email: user.email,
+          city: user.city,
+        },
+        auction: {
+          _id: auction._id,
+          lotNumber: auction.lotNumber || "LOT-XXXX",
+          title: auction.title || "Vehicle Auction",
+        },
+        amount: p.amount || 0,
+        paymentMethod: "Razorpay Online",
+        status,
+        date: txDate ? new Date(txDate).toISOString() : new Date(p.createdAt).toISOString(),
+        failureReason: status === "FAILED" ? p.failureReason || p.refundError || "Payment failed" : p.refundError,
+        orderId: p.orderId,
+        paymentId: p.paymentId,
+        refundId: p.refundId,
+        refundInitiatedAt: p.refundInitiatedAt,
+        refundedAt: p.refundedAt,
       });
-
-      // Generate realistic Failed and Pending transactions for demonstration & full tracking
-      if (auctions.length > 0) {
-        if (uIdx === 2 || uIdx === 7) {
-          txIndex += 1;
-          const targetAuc = auctions[uIdx % auctions.length];
-          paymentTransactions.push({
-            txnId: `TXN-${txIndex}`,
-            user: {
-              _id: u._id,
-              name: u.name,
-              cusId: getCusId(u),
-              phone: u.phone,
-              email: u.email,
-              city: u.city,
-            },
-            auction: {
-              _id: targetAuc._id,
-              lotNumber: targetAuc.lotNumber || "LOT-XXXX",
-              title: targetAuc.title || "Vehicle Auction",
-            },
-            amount: targetAuc.registrationFee || defaultFee,
-            paymentMethod: "Bank NetBanking",
-            status: "FAILED",
-            date: new Date(Date.now() - (uIdx + 1) * 3600000 * 5).toISOString(),
-            failureReason: "Payment gateway timeout / Bank server error",
-          });
-        }
-
-        if (uIdx === 3 || uIdx === 5) {
-          txIndex += 1;
-          const targetAuc = auctions[(uIdx + 1) % auctions.length];
-          paymentTransactions.push({
-            txnId: `TXN-${txIndex}`,
-            user: {
-              _id: u._id,
-              name: u.name,
-              cusId: getCusId(u),
-              phone: u.phone,
-              email: u.email,
-              city: u.city,
-            },
-            auction: {
-              _id: targetAuc._id,
-              lotNumber: targetAuc.lotNumber || "LOT-XXXX",
-              title: targetAuc.title || "Vehicle Auction",
-            },
-            amount: targetAuc.registrationFee || defaultFee,
-            paymentMethod: "UPI / GPay",
-            status: "PENDING",
-            date: new Date(Date.now() - uIdx * 1800000).toISOString(),
-            failureReason: "Awaiting bank UPI confirmation",
-          });
-        }
-      }
     });
-
-    // Sort by date descending
-    paymentTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Filter transactions
     const filteredTxns = paymentTransactions.filter((tx) => {
@@ -126,9 +101,13 @@ export async function GET(request: Request) {
         const nameMatch = tx.user.name?.toLowerCase().includes(q);
         const cusIdMatch = tx.user.cusId?.toLowerCase().includes(q);
         const phoneMatch = tx.user.phone?.toLowerCase().includes(q);
+        const emailMatch = tx.user.email?.toLowerCase().includes(q);
         const lotMatch = tx.auction.lotNumber?.toLowerCase().includes(q);
         const txnMatch = tx.txnId.toLowerCase().includes(q);
-        if (!nameMatch && !cusIdMatch && !phoneMatch && !lotMatch && !txnMatch) return false;
+        const orderMatch = (tx.orderId || "").toLowerCase().includes(q);
+        const paymentMatch = (tx.paymentId || "").toLowerCase().includes(q);
+        if (!nameMatch && !cusIdMatch && !phoneMatch && !emailMatch && !lotMatch && !txnMatch && !orderMatch && !paymentMatch)
+          return false;
       }
 
       if (lotFilter.trim()) {
@@ -137,16 +116,13 @@ export async function GET(request: Request) {
         if (!lotMatch) return false;
       }
 
-      if (statusFilter === "SUCCESS") return tx.status === "SUCCESS";
-      if (statusFilter === "REFUNDED") return tx.status === "REFUNDED";
-      if (statusFilter === "FAILED") return tx.status === "FAILED";
-      if (statusFilter === "PENDING") return tx.status === "PENDING";
+      if (statusFilter !== "ALL" && tx.status !== statusFilter) return false;
 
       return true;
     });
 
     const totalCollected = paymentTransactions
-      .filter((t) => t.status === "SUCCESS" || t.status === "REFUNDED")
+      .filter((t) => t.status === "PAID" || t.status === "REFUND_PENDING" || t.status === "REFUNDED")
       .reduce((acc, t) => acc + t.amount, 0);
 
     const totalRefunded = paymentTransactions
@@ -164,8 +140,9 @@ export async function GET(request: Request) {
       lots: lotList,
       summary: {
         totalTransactions: paymentTransactions.length,
-        successfulTransactions: paymentTransactions.filter((t) => t.status === "SUCCESS").length,
+        successfulTransactions: paymentTransactions.filter((t) => t.status === "PAID").length,
         refundedTransactions: paymentTransactions.filter((t) => t.status === "REFUNDED").length,
+        refundPendingTransactions: paymentTransactions.filter((t) => t.status === "REFUND_PENDING").length,
         failedTransactions: paymentTransactions.filter((t) => t.status === "FAILED").length,
         pendingTransactions: paymentTransactions.filter((t) => t.status === "PENDING").length,
         totalCollected,
@@ -174,7 +151,8 @@ export async function GET(request: Request) {
       },
       transactions: filteredTxns,
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

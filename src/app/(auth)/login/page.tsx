@@ -120,10 +120,6 @@ export default function LoginPage() {
         <Link href="/register" className="text-primary font-bold hover:underline">
           Register for Free
         </Link>
-        <span className="mx-2 text-outline">|</span>
-        <Link href="/terms" className="text-primary font-bold hover:underline">
-          Terms &amp; Conditions
-        </Link>
       </div>
     </div>
   );

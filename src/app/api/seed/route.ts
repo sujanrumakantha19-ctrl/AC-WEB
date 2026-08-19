@@ -225,7 +225,7 @@ export async function POST() {
         ownership: "1st Owner",
         insurance: "Valid till Dec 2026",
         description: "Immaculate condition Mahindra Thar with full company service history, ceramic coating, and custom alloys.",
-        rules: "Minimum bid increment: ₹10,000. Registration fee ₹5,000 mandatory before placing offers.",
+        rules: "Minimum offer increment: ₹10,000. Registration fee ₹5,000 mandatory before placing offers.",
         whatsappGroups: [{ link: "https://chat.whatsapp.com/sample-group-1", limit: 900, notifyBefore: 5 }],
       },
 
@@ -270,7 +270,7 @@ export async function POST() {
         ownership: "1st Owner",
         insurance: "Comprehensive till Aug 2026",
         description: "Top-end Creta SX(O) with panoramic sunroof, Bose sound system, ventilated seats, and zero accidents.",
-        rules: "Minimum bid increment: ₹10,000.",
+        rules: "Minimum offer increment: ₹10,000.",
         whatsappGroups: [{ link: "https://chat.whatsapp.com/sample-group-2", limit: 900, notifyBefore: 5 }],
       },
 
@@ -315,7 +315,7 @@ export async function POST() {
         ownership: "1st Owner",
         insurance: "Zero Dep Insurance till 2027",
         description: "Latest Nexon EV facelift with 465 km ARAI range, 360-degree camera, V2L & V2V charging capabilities.",
-        rules: "Minimum bid increment: ₹10,000.",
+        rules: "Minimum offer increment: ₹10,000.",
         whatsappGroups: [{ link: "https://chat.whatsapp.com/sample-group-3", limit: 900, notifyBefore: 5 }],
       },
 
@@ -407,7 +407,7 @@ export async function POST() {
         ownership: "1st Owner",
         insurance: "Comprehensive till Nov 2026",
         description: "BMW 3 Series M Sport edition with Head-Up Display, Gesture Control, and M Aerodynamics package.",
-        rules: "Minimum bid increment ₹25,000.",
+        rules: "Minimum offer increment ₹25,000.",
         whatsappGroups: [{ link: "https://chat.whatsapp.com/sample-group-5", limit: 900, notifyBefore: 15 }],
       },
 

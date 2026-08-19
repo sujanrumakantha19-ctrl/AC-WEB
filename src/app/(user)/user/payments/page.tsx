@@ -22,6 +22,13 @@ const STATUS_CONFIG: Record<
     bg: "bg-amber-50",
     border: "border-amber-200",
   },
+  REFUND_PENDING: {
+    label: "Refund Pending",
+    icon: "schedule",
+    color: "text-amber-700",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+  },
   FAILED: {
     label: "Failed",
     icon: "cancel",
@@ -73,8 +80,8 @@ export default function UserPaymentHistoryPage() {
 
       {/* Summary cards */}
       {!isLoading && payments.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {(["PAID", "PENDING", "FAILED", "REFUNDED"] as const).map((s) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          {(["PAID", "PENDING", "REFUND_PENDING", "FAILED", "REFUNDED"] as const).map((s) => {
             const cfg = STATUS_CONFIG[s];
             const count = payments.filter(
               (p: any) => p.status === s

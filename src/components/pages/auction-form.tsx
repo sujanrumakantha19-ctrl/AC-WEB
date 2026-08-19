@@ -8,6 +8,7 @@ import { useGetAuctionQuery, useCreateAuctionMutation, useUpdateAuctionMutation 
 import { useGetSpecialRulesQuery } from "@/services/settings-api";
 import { useUploadImageMutation } from "@/services/upload-api";
 import { errorMessage } from "@/lib/helpers";
+import { compressImage } from "@/lib/compress-image";
 
 const toLocalInput = (d: string | Date | undefined) => {
   if (!d) return "";
@@ -48,6 +49,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [error, setError] = useState("");
+  const [isParkingSale, setIsParkingSale] = useState(false);
 
   const { data: auctionData, isLoading } = useGetAuctionQuery(auctionId || "", { skip: !auctionId });
   const { data: rulesData } = useGetSpecialRulesQuery(undefined, { skip: !!auctionId });
@@ -82,6 +84,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       setRoundTimes(auction.roundTimes.map((rt) => ({ start: toLocalInput(rt.start), end: toLocalInput(rt.end) })));
     }
     setImagePreviews([auction.image, ...(auction.images || [])].filter(Boolean) as string[]);
+    setIsParkingSale(!!auction.isParkingSale);
   }, [auction]);
 
   useEffect(() => {
@@ -90,7 +93,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
 
   const uploadFile = async (file: File): Promise<string> => {
     const fd = new FormData();
-    fd.append("file", file);
+    fd.append("file", await compressImage(file));
     const { url } = await uploadImage(fd).unwrap();
     return url;
   };
@@ -223,6 +226,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       roundTimes,
       startTime: firstStart.toISOString(),
       endTime: lastEnd.toISOString(),
+      isParkingSale,
       image: mainImage ? await uploadFile(mainImage) : existingMain,
       images: isEdit
         ? [...existingImages, ...(await Promise.all(additionalImages.map(uploadFile)))]
@@ -517,6 +521,29 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
             </div>
 
             <div className="col-span-12 lg:col-span-4 space-y-6">
+              <div className="bg-white p-6 rounded-2xl border border-outline-variant/30 space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-outline-variant/20">
+                  <span className="material-symbols-outlined text-primary text-xl">local_parking</span>
+                  <h2 className="text-sm font-extrabold text-on-surface">Sale Type</h2>
+                </div>
+
+                <label className="flex items-center justify-between gap-3 cursor-pointer">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs font-bold text-on-surface">Parking Sale</span>
+                    <span className="text-[10px] font-medium text-on-surface-variant">Mark this auction as a parking sale vehicle</span>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isParkingSale}
+                    onClick={() => setIsParkingSale((v) => !v)}
+                    className={`w-11 h-6 rounded-full transition-colors shrink-0 ${isParkingSale ? "bg-primary" : "bg-outline-variant/60"}`}
+                  >
+                    <span className={`block w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isParkingSale ? "translate-x-5" : "translate-x-0.5"}`} />
+                  </button>
+                </label>
+              </div>
+
               <div className="bg-white p-6 rounded-2xl border border-outline-variant/30 space-y-4">
                 <div className="flex items-center gap-2.5 pb-3 border-b border-outline-variant/20">
                   <span className="material-symbols-outlined text-primary text-xl">payments</span>

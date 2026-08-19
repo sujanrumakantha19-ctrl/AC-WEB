@@ -110,7 +110,7 @@ export default function AdminUsersPage() {
       return selectedAuction ? `Refunded (Lot: ${selectedAuction.lotNumber})` : "💸 Refunded";
     }
     if (activeTab === "NON_REFUNDED") {
-      return selectedAuction ? `Not Refunded (Lot: ${selectedAuction.lotNumber})` : "⏳ Not Refunded";
+      return selectedAuction ? `Pending / No Refund (Lot: ${selectedAuction.lotNumber})` : "⏳ Pending / No Refund";
     }
     return "All";
   };
@@ -455,7 +455,7 @@ export default function AdminUsersPage() {
                     { id: "WINNERS", label: "🏆 Winners List", count: rawUsers.filter((u) => u.winningCount > 0).length },
                     { id: "NOT_REGISTERED", label: "Not Registered for Any", count: rawUsers.filter((u) => u.participatedCount === 0).length },
                     { id: "REFUNDED", label: "💸 Refunded", count: rawUsers.filter((u) => u.participatedCount > 0 && u.winningCount === 0 && u.hasRefunded).length },
-                    { id: "NON_REFUNDED", label: "⏳ Not Refunded", count: rawUsers.filter((u) => u.participatedCount > 0 && u.winningCount === 0 && u.hasNonRefunded).length },
+                    { id: "NON_REFUNDED", label: "⏳ Pending / No Refund", count: rawUsers.filter((u) => u.participatedCount > 0 && u.winningCount === 0 && u.hasNonRefunded).length },
                   ].map((opt) => (
                     <label
                       key={opt.id}
@@ -662,9 +662,13 @@ export default function AdminUsersPage() {
                             <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-[10px] font-bold">
                               💸 Refunded
                             </span>
-                          ) : (
+                          ) : pa.refundEligible ? (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[10px] font-bold">
-                              ⏳ Not Refunded
+                              ⏳ Refund Pending
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-[10px] font-bold">
+                              ✗ No Refund
                             </span>
                           )}
                         </div>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const passwordRegex = /^.{8,}$/;
 
 export default function ResetPasswordPage() {
   const [step, setStep] = useState<1 | 2>(1);
@@ -87,7 +87,7 @@ export default function ResetPasswordPage() {
     setMessage("");
 
     if (!passwordRegex.test(newPassword)) {
-      setError("Must have 8+ characters with uppercase, lowercase, number and special symbol");
+      setError("Password must be at least 8 characters long");
       return;
     }
 
@@ -205,7 +205,7 @@ export default function ResetPasswordPage() {
             }
           />
           <p className="text-[11px] text-outline leading-tight">
-            Must contain 8+ characters with uppercase, lowercase, number, and special symbol.
+            Must be at least 8 characters long.
           </p>
 
           <button

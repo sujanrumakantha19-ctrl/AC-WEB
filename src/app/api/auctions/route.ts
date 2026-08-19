@@ -2,11 +2,13 @@ import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
 import { ok, created, badRequest, route, requireAdmin } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
+import { syncRefundSettlements } from "@/lib/razorpay-sync";
 import { isSameMonth, isInNextMonth } from "@/lib/auction-status";
 
 export const GET = route(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
+  const parkingSale = searchParams.get("parkingSale") === "true";
   const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50") || 50, 1), 100);
   const page = Math.max(parseInt(searchParams.get("page") || "1") || 1, 1);
 
@@ -79,9 +81,12 @@ export const GET = route(async (request: NextRequest) => {
 
     if (changed) await a.save();
 
-    if (newStatus === "ENDED" && a.winner) {
+    if (newStatus === "ENDED") {
       try {
-        await processAuctionRefunds(String(a._id));
+        const result = await processAuctionRefunds(String(a._id));
+        if (result.failed > 0) {
+          console.error(`[auction-refunds] list route: ${result.failed} refund(s) failed`, a._id);
+        }
       } catch (err) {
         console.error("[auction-refunds] list route: failed to process", a._id, err);
       }
@@ -92,8 +97,18 @@ export const GET = route(async (request: NextRequest) => {
     }
 
     if (!status || a.status === status) {
+      if (parkingSale && !a.isParkingSale) continue;
       matches.push(a);
     }
+  }
+
+  try {
+    const settle = await syncRefundSettlements();
+    if (settle.settled > 0 || settle.failed > 0) {
+      console.log(`[auction-refunds] list route: ${settle.settled} settled, ${settle.failed} failed`);
+    }
+  } catch (err) {
+    console.error("[auction-refunds] list route: refund settlement failed", err);
   }
 
   const total = matches.length;

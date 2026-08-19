@@ -12,9 +12,9 @@ export const POST = route(async (request: NextRequest) => {
     return badRequest("Current and new password are required");
   }
 
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+  const passwordRegex = /^.{8,}$/;
   if (!passwordRegex.test(newPassword)) {
-    return badRequest("New password must have 8+ characters with uppercase, lowercase, number and special symbol");
+    return badRequest("New password must be at least 8 characters long");
   }
 
   const user = await User.findById(auth.userId);

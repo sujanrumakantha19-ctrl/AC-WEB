@@ -3,7 +3,7 @@ import User from "@/models/User";
 import dbConnect from "@/lib/db";
 import { ok, badRequest, route, notFound } from "@/lib/api-helpers";
 
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const passwordRegex = /^.{8,}$/;
 
 export const POST = route(async (request: NextRequest) => {
   await dbConnect();
@@ -18,9 +18,7 @@ export const POST = route(async (request: NextRequest) => {
   }
 
   if (!passwordRegex.test(newPassword)) {
-    return badRequest(
-      "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
-    );
+    return badRequest("Password must be at least 8 characters long.");
   }
 
   const user = await User.findOne({ email });

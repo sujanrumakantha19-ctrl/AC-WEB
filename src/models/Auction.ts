@@ -37,6 +37,7 @@ export interface IAuction extends Omit<Document, 'model'> {
   seller: string;
   verifiedSeller: boolean;
   inspectionScore: number;
+  isParkingSale: boolean;
   lotNumber: string;
   engine: string;
   color: string;
@@ -93,6 +94,7 @@ const AuctionSchema = new Schema<IAuction>(
     seller: { type: String, default: "VKS Autoservices" },
     verifiedSeller: { type: Boolean, default: true },
     inspectionScore: { type: Number, default: 9.0 },
+    isParkingSale: { type: Boolean, default: false },
     lotNumber: { type: String, required: true, unique: true },
     engine: { type: String, default: "" },
     color: { type: String, default: "" },

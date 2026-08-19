@@ -36,10 +36,10 @@ export default function RegisterPage() {
   const passwordsMatch = password === confirmPassword;
   const passwordError = confirmPassword && !passwordsMatch ? "Passwords do not match" : "";
 
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+  const passwordRegex = /^.{8,}$/;
   const passwordPolicyError =
     password && !passwordRegex.test(password)
-      ? "Must have 8+ characters with uppercase, lowercase, number and special symbol"
+      ? "Password must be at least 8 characters long"
       : "";
 
   const [toast, setToast] = useState<string | null>(null);
@@ -99,7 +99,7 @@ export default function RegisterPage() {
     }
 
     if (!passwordRegex.test(password)) {
-      showToast("Password must be at least 8 characters with an uppercase letter, lowercase letter, number and special symbol");
+      showToast("Password must be at least 8 characters long");
       return;
     }
 

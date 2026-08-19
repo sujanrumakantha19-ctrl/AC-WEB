@@ -101,7 +101,8 @@ export default function AdminCompletedAuctionDetailPage() {
   const allParticipants = Array.from(participantMap.values());
 
   const refundedParticipants = allParticipants.filter((p: any) => p.refunded);
-  const notRefundedParticipants = allParticipants.filter((p: any) => !p.isWinner && p.lastRoundOffer != null && !p.refunded);
+  const refundInProcessParticipants = allParticipants.filter((p: any) => !p.isWinner && p.lastRoundOffer != null && !p.refunded && p.refundEligible);
+  const notRefundedParticipants = allParticipants.filter((p: any) => !p.isWinner && p.lastRoundOffer != null && !p.refunded && !p.refundEligible);
 
   let winnerObj: { _id?: string; name?: string; phone?: string; email?: string; cusId?: string } | undefined =
     typeof auction.winner === "object" ? auction.winner : undefined;
@@ -171,17 +172,21 @@ export default function AdminCompletedAuctionDetailPage() {
             Last round · Top 50% · Offer ≥ 10% of winning offer
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Refunded Customers</p>
             <p className="text-2xl font-extrabold text-emerald-700 font-mono">{refundedParticipants.length}</p>
           </div>
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Refund Pending</p>
+            <p className="text-2xl font-extrabold text-amber-700 font-mono">{refundInProcessParticipants.length}</p>
+          </div>
           <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-red-700">Not Eligible / Not Refunded</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-red-700">No Refund</p>
             <p className="text-2xl font-extrabold text-red-700 font-mono">{notRefundedParticipants.length}</p>
           </div>
           <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-outline">Total Last-Round Bidders</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-outline">Total Last-Round Participants</p>
             <p className="text-2xl font-extrabold text-on-surface font-mono">{allParticipants.filter((p: any) => p.lastRoundOffer != null && !p.isWinner).length}</p>
           </div>
         </div>

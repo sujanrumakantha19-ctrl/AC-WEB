@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { SkeletonText } from "@/components/ui/skeleton";
 import { formatINR, getCusId } from "@/lib/utils";
 
-type StatusTab = "ALL" | "SUCCESS" | "REFUNDED" | "FAILED" | "PENDING";
+type StatusTab = "ALL" | "PAID" | "REFUND_PENDING" | "REFUNDED" | "FAILED" | "PENDING";
 
 export default function AdminPaymentHistoryPage() {
   const [search, setSearch] = useState("");
@@ -94,8 +94,11 @@ export default function AdminPaymentHistoryPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case "PAID":
       case "SUCCESS":
         return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 whitespace-nowrap inline-block shadow-2xs">✓ Paid</span>;
+      case "REFUND_PENDING":
+        return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 whitespace-nowrap inline-block shadow-2xs">⏳ Refund Pending</span>;
       case "REFUNDED":
         return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 whitespace-nowrap inline-block shadow-2xs">💸 Refunded</span>;
       case "FAILED":
@@ -192,12 +195,14 @@ export default function AdminPaymentHistoryPage() {
           {isLoading ? (
             <SkeletonText className="w-20 h-6" />
           ) : (
-            <div className="flex items-center gap-1.5 text-xs font-extrabold">
+            <div className="flex items-center gap-1.5 text-xs font-extrabold flex-wrap">
               <span className="text-emerald-700 font-mono">{summary.successfulTransactions || 0} Paid</span>
               <span>·</span>
               <span className="text-red-700 font-mono">{summary.failedTransactions || 0} Failed</span>
               <span>·</span>
               <span className="text-amber-700 font-mono">{summary.pendingTransactions || 0} Pending</span>
+              <span>·</span>
+              <span className="text-amber-700 font-mono">{summary.refundPendingTransactions || 0} Refund Pending</span>
             </div>
           )}
           <p className="text-[10px] text-on-surface-variant font-medium">
@@ -247,12 +252,20 @@ export default function AdminPaymentHistoryPage() {
             All Payments
           </button>
           <button
-            onClick={() => setActiveStatus("SUCCESS")}
+            onClick={() => setActiveStatus("PAID")}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              activeStatus === "SUCCESS" ? "bg-primary text-white shadow-xs" : "text-on-surface-variant hover:text-on-surface"
+              activeStatus === "PAID" ? "bg-primary text-white shadow-xs" : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
             Completed
+          </button>
+          <button
+            onClick={() => setActiveStatus("REFUND_PENDING")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              activeStatus === "REFUND_PENDING" ? "bg-primary text-white shadow-xs" : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            Refund Pending
           </button>
           <button
             onClick={() => setActiveStatus("REFUNDED")}

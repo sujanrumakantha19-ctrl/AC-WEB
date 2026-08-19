@@ -4,6 +4,7 @@ import Auction from "@/models/Auction";
 import Offer from "@/models/Offer";
 import { ok, route, requireAdmin, badRequest } from "@/lib/api-helpers";
 import { getCusId } from "@/lib/utils";
+import { computeRefundStatus } from "@/lib/auction-refunds";
 
 export const GET = route(async (request: NextRequest) => {
   const auth = await requireAdmin(request);
@@ -41,6 +42,22 @@ export const GET = route(async (request: NextRequest) => {
     }
   }
 
+  // Eligible refund users per ENDED auction (refundEligible without considering
+  // whether the refund has already been issued).
+  const eligibleByAuction = new Map<string, Set<string>>();
+  for (const a of auctions) {
+    if (a.status !== "ENDED") continue;
+    try {
+      const statuses = await computeRefundStatus(a);
+      eligibleByAuction.set(
+        a._id.toString(),
+        new Set(statuses.filter((s) => s.refundEligible).map((s) => s.buyerId))
+      );
+    } catch (err) {
+      console.error("[admin/users] refund eligibility failed", a._id, err);
+    }
+  }
+
   const richUsers = rawUsers.map((u: any) => {
     const userIdStr = u._id.toString();
     const paidIds = new Set<string>((u.paidAccessAuctions || []).map((id: any) => id.toString()));
@@ -65,6 +82,7 @@ export const GET = route(async (request: NextRequest) => {
       const isWinner = auc.winner?.toString() === userIdStr;
       const isRefunded = refundedIds.has(aucId);
       const isPaid = paidIds.has(aucId);
+      const isRefundEligible = eligibleByAuction.get(aucId)?.has(userIdStr) ?? false;
 
       if (isWinner) {
         winningCount++;
@@ -91,6 +109,7 @@ export const GET = route(async (request: NextRequest) => {
         winningOffer: auc.winningOffer || 0,
         won: isWinner,
         refunded: isRefunded,
+        refundEligible: isRefundEligible,
         highestUserOffer,
         offerCount: auctionUserOffers.length,
       });

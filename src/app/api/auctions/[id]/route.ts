@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
 import { ok, route, requireAdmin, notFound, badRequest } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
+import { syncRefundSettlements } from "@/lib/razorpay-sync";
 import { getUserFromRequest } from "@/lib/auth";
 import { deleteImage, imageIdFromUrl } from "@/lib/gridfs";
 import { syncAuctionRoundStates } from "@/lib/round-state-sync";
@@ -28,11 +29,16 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
 
   const result: Record<string, unknown> = { ...auction.toObject() };
 
-  if (auction.status === "ENDED" && auction.winner) {
+  if (auction.status === "ENDED") {
     try {
       await processAuctionRefunds(id);
     } catch (err) {
       console.error("[auction-refunds] get route: failed to process", id, err);
+    }
+    try {
+      await syncRefundSettlements();
+    } catch (err) {
+      console.error("[auction-refunds] get route: refund settlement failed", id, err);
     }
   }
 

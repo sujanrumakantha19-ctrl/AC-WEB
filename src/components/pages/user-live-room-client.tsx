@@ -324,7 +324,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
           <div className="py-6 text-center text-xs text-on-surface-variant space-y-1">
             <span className="material-symbols-outlined text-2xl text-outline">timeline</span>
             <p className="font-bold">No offers placed yet</p>
-            <p className="text-[10px]">Offers will appear here in real time as participants bid.</p>
+            <p className="text-[10px]">Offers will appear here in real time as participants place them.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">

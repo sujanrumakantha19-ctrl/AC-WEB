@@ -131,9 +131,13 @@ export function ParticipantsPopup({
                             <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                               ✓ Refunded
                             </span>
+                          ) : user.refundEligible ? (
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                              ⏳ Refund Pending
+                            </span>
                           ) : (
                             <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
-                              ✗ Not Refunded
+                              ✗ No Refund
                             </span>
                           )}
                         </td>

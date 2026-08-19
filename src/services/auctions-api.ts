@@ -11,6 +11,7 @@ export interface AuctionListResult {
 
 export interface AuctionListParams {
   status?: string;
+  parkingSale?: boolean;
   limit?: number;
   page?: number;
 }

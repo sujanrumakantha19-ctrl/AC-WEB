@@ -5,70 +5,68 @@ const sections = [
     title: "1. General Conditions",
     points: [
       "This service is operated by VKS AUTO SERVICES, Madurai, Tamil Nadu – 625005.",
-      "By registering, the customer agrees to all Terms & Conditions mentioned below.",
-      "We only provide vehicle information, document verification, and buyer–seller coordination.",
-      "We do not engage in vehicle sale, auction, or bidding.",
+      "By registering on this website, the customer agrees to all Terms & Conditions mentioned below.",
+      "VKS AUTO SERVICES operates an online vehicle auction platform where registered and verified customers place offers on vehicles across scheduled auction rounds.",
+      "We provide vehicle information, document verification, auction management, and buyer–seller coordination.",
     ],
   },
   {
-    title: "2. Registration Fees",
+    title: "2. Registration & Account",
     points: [
-      "Registration Fee: ₹499 + GST (₹588 total)",
-      "This fee is strictly NON-REFUNDABLE under any circumstances.",
-      "Fee is charged only for verification, access to verified vehicle details, and platform usage.",
+      "Customers must provide genuine, complete, and accurate details during registration, including name, mobile number, email, and address.",
+      "A Customer ID is created on successful registration.",
+      "Only registered and verified customers can participate in auctions and place offers.",
+      "Fake details, wrong mobile numbers, or fraudulent activity will result in immediate account removal.",
     ],
   },
   {
-    title: "3. Eligibility",
+    title: "3. Registration Fee",
     points: [
-      "Only registered customers can access verified vehicle information.",
-      "Fake details, wrong mobile numbers, or fraudulent activity will result in immediate removal.",
+      "A Registration Fee of ₹599 per auction (as displayed on the auction listing) is charged to participate in that auction.",
+      "This fee is payable through the online payment gateway before offers can be placed.",
+      "The fee covers identity verification, access to verified vehicle details, and participation in the auction.",
+      "Refunds, if any, are governed by the Refund Policy.",
     ],
   },
   {
-    title: "4. Vehicle Information",
+    title: "4. Auctions & Offers",
+    points: [
+      "Auctions run in scheduled rounds with set start and end times.",
+      "Customers place offers on vehicles during the active rounds.",
+      "The highest valid offer at the close of the auction, subject to the auction rules, is considered the winning offer.",
+      "Once placed, an offer is binding on the customer and cannot be withdrawn.",
+      "Our platform does not itself buy or sell vehicles; the auction connects verified customers with vehicle owners.",
+    ],
+  },
+  {
+    title: "5. Winner & Payment",
+    points: [
+      "The customer who places the winning offer is declared the winner of the auction.",
+      "The winner is required to complete the payment as per the auction terms through the online payment gateway.",
+      "VKS Auto Services is not responsible for disputes between buyer and seller after the auction concludes.",
+    ],
+  },
+  {
+    title: "6. Refunds",
+    points: [
+      "Refunds are issued only in the circumstances described in the Refund Policy.",
+      "All refunds are processed back to the original payment method within the timelines stated in the Refund Policy.",
+    ],
+  },
+  {
+    title: "7. Eligibility & Prohibited Conduct",
+    points: [
+      "Only registered customers can access verified vehicle information and place offers.",
+      "Collusion, price manipulation, fake offers, or any attempt to interfere with the auction process is strictly prohibited.",
+      "Cheating attempts, chargebacks, or fraudulent activity will lead to account termination and, if necessary, legal action.",
+    ],
+  },
+  {
+    title: "8. Vehicle Information",
     points: [
       "Vehicle details (model, documents, condition, history) are provided as received from the owner.",
-      "We do not guarantee the accuracy of every detail.",
-      "Customers must verify the car physically before any payment.",
-    ],
-  },
-  {
-    title: "5. Buyer–Seller Process",
-    points: [
-      "We connect the verified customer to the seller.",
-      "All final negotiation, payment, delivery must be done directly between buyer and seller.",
-      "VKS Auto Services is not responsible for disputes between buyer and seller.",
-    ],
-  },
-  {
-    title: "6. Payments",
-    points: [
-      "All payments on this website are processed through the Online Payment Gateway.",
-      "No advance or booking amount is collected by us for vehicle purchase.",
-      "We only collect registration fees for verification access.",
-    ],
-  },
-  {
-    title: "7. Service Provided",
-    points: [
-      "We provide:",
-      "Verified car details",
-      "Owner-shared documents",
-      "Buyer–seller coordination",
-      "Customer support",
-      "We do NOT:",
-      "Buy or sell vehicles",
-      "Involve in loan, insurance, or legal transfer",
-      "Provide any guarantee about seller commitments",
-    ],
-  },
-  {
-    title: "8. Misuse",
-    points: [
-      "Fake details, cheating attempts, or chargebacks will lead to:",
-      "Account termination",
-      "Legal action if necessary",
+      "We verify the information to the best of our ability but do not guarantee the accuracy of every detail.",
+      "Customers must inspect the vehicle physically before completing any purchase payment.",
     ],
   },
 ];
@@ -84,7 +82,7 @@ const additionalClauses = [
   "You may not create a link to our website from another website or document without the prior written consent of VKS AUTO SERVICES.",
   "Any dispute arising out of the use of our website, purchase with us and/or any engagement with us is subject to the laws of India.",
   "We shall be under no liability whatsoever in respect of any loss or damage arising directly or indirectly out of the decline of authorization for any Transaction, on account of the Cardholder having exceeded the preset limit mutually agreed by us with our acquiring bank from time to time.",
-  "This service is operated by VKS AUTO SERVICES, Madurai, Tamil Nadu – 625005. We only provide vehicle information, document verification, and buyer–seller coordination. We do not engage in vehicle sale, auction, or bidding.",
+  "This service is operated by VKS AUTO SERVICES, Madurai, Tamil Nadu – 625005. VKS AUTO SERVICES operates an online vehicle auction platform and does not itself buy or sell vehicles.",
 ];
 
 export default function TermsPage() {
@@ -93,7 +91,7 @@ export default function TermsPage() {
       {/* Header */}
       <div className="space-y-3">
         <h1 className="text-2xl md:text-3xl font-extrabold text-on-background">Terms and Conditions</h1>
-        <p className="text-xs md:text-sm text-on-surface-variant">Last updated on Nov 23rd, 2025</p>
+        <p className="text-xs md:text-sm text-on-surface-variant">Last updated on Aug 19th, 2026</p>
       </div>
 
       {/* Definition */}
@@ -105,10 +103,12 @@ export default function TermsPage() {
           <span className="font-semibold text-on-surface">VKS AUTO SERVICES</span>, whose registered/operational office
           is KODANGI THOPPU STREET, THIRUPPARANKUNDRAM, 625005, Thiruparankundram SO, Tamil Nadu 625005.{" "}
           <span className="font-semibold text-on-surface">&quot;you&quot; / &quot;your&quot; / &quot;user&quot;</span>{" "}
-          shall mean any natural or legal person who is visiting our website or has agreed to purchase from us.
+          shall mean any natural or legal person who is visiting our website or has agreed to participate in an
+          auction conducted through our website.
         </p>
         <p className="mt-3">
-          Your use of the website or purchase from us are governed by the following Terms and Conditions.
+          Your use of the website or participation in our auctions are governed by the following Terms and
+          Conditions.
         </p>
       </div>
 
