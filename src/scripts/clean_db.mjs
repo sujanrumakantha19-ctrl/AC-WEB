@@ -1,10 +1,23 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import fs from 'fs';
+import path from 'path';
 import mongoose from 'mongoose';
 
+// Parse .env.local directly
+let uri = process.env.MONGODB_URI;
+if (!uri) {
+  try {
+    const envContent = fs.readFileSync(path.join(process.cwd(), '.env.local'), 'utf-8');
+    const match = envContent.match(/^MONGODB_URI=(.*)$/m);
+    if (match) uri = match[1].trim();
+  } catch (e) {}
+}
+
+if (!uri) {
+  uri = 'mongodb://127.0.0.1:27017/ACWEB';
+}
+
 async function run() {
-  const uri = process.env.MONGODB_URI;
-  console.log('Connecting to MongoDB...');
+  console.log('Connecting to MongoDB uri:', uri);
   await mongoose.connect(uri);
   const db = mongoose.connection.db;
 
