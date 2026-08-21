@@ -20,22 +20,37 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/contact-us",
-        destination: "/about",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/contact-1",
-        destination: "/about",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/new-page-2",
-        destination: "/auctions",
+        destination: "/",
         permanent: true,
       },
       {
         source: "/new-page-1",
-        destination: "/auctions",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/cancellations-and-refunds",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/terms-and-conditions",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/shipping-policy",
+        destination: "/",
         permanent: true,
       },
       {
@@ -45,7 +60,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/services",
-        destination: "/about",
+        destination: "/",
         permanent: true,
       },
     ];
