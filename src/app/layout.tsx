@@ -16,6 +16,14 @@ const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vks-theme
 export const metadata: Metadata = {
   title: "VKS Autoservices | Premium Automotive Auction Platform",
   description: "Experience the thrill of acquiring premium SUVs and luxury sedans through India's most trusted offering platform.",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico", type: "image/x-icon" },
+    ],
+    shortcut: "/icon.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -26,6 +34,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`light h-full antialiased ${inter.className}`}>
       <head>
+        <link rel="icon" href="/icon.png" type="image/png" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
