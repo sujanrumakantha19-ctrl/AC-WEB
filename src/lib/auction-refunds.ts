@@ -30,7 +30,7 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("en-IN");
  *  3. Only the top 50% of bidders (by last-round offer amount, desc) are
  *     considered eligible for a refund.
  *  4. Within that top 50%, a refund is issued only if the bidder's last-round
- *     offer is at least 10% of the winner's final offer price.
+ *     offer is at least 1% of the winner's final offer price.
  *
  * Without a winner (cancelled / no bids in the final round):
  *  every paid participant is eligible for a full registration-fee refund.
@@ -79,7 +79,7 @@ export async function computeRefundStatus(
       u.inTop50 = i < topCount;
     });
 
-    const threshold = winningOffer * 0.1;
+    const threshold = winningOffer * 0.01;
     for (const u of list) {
       u.refundEligible = u.inTop50 && threshold > 0 ? u.lastRoundOffer >= threshold : false;
       u.refunded = false;

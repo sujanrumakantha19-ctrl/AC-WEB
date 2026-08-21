@@ -169,7 +169,7 @@ export default function AdminCompletedAuctionDetailPage() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-extrabold">Refund Summary</h2>
           <span className="text-[10px] font-bold text-outline uppercase tracking-wider">
-            Last round · Top 50% · Offer ≥ 10% of winning offer
+            Last round · Top 50% · Offer ≥ 1% of winning offer
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -178,7 +178,7 @@ export default function AdminCompletedAuctionDetailPage() {
             <p className="text-2xl font-extrabold text-emerald-700 font-mono">{refundedParticipants.length}</p>
           </div>
           <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Refund Pending</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Refund Initiated</p>
             <p className="text-2xl font-extrabold text-amber-700 font-mono">{refundInProcessParticipants.length}</p>
           </div>
           <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center">

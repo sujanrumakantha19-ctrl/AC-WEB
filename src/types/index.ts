@@ -59,6 +59,7 @@ export interface SerializedAuction {
   offerUnlockFee?: number;
   inspectionScore?: number;
   isParkingSale?: boolean;
+  thresholdAmount?: number;
   engine?: string;
   color?: string;
   ownership?: string;

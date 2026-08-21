@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Payment from "@/models/Payment";
+import { syncRefundSettlements } from "@/lib/razorpay-sync";
 
 type PopulatedPayment = {
   _id: unknown;
@@ -40,6 +41,13 @@ const fmtTxnId = (orderId: string, suffix: string) =>
 export async function GET(request: Request) {
   try {
     await dbConnect();
+
+    try {
+      await syncRefundSettlements();
+    } catch (err) {
+      console.error("[admin-payments] refund settlement sync failed", err);
+    }
+
     const { searchParams } = new URL(request.url);
 
     const search = searchParams.get("search") || "";

@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
+import Offer from "@/models/Offer";
 import { ok, route, requireAdmin, notFound, badRequest } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
-import { syncRefundSettlements } from "@/lib/razorpay-sync";
 import { getUserFromRequest } from "@/lib/auth";
 import { deleteImage, imageIdFromUrl } from "@/lib/gridfs";
 import { syncAuctionRoundStates } from "@/lib/round-state-sync";
@@ -35,11 +35,6 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
     } catch (err) {
       console.error("[auction-refunds] get route: failed to process", id, err);
     }
-    try {
-      await syncRefundSettlements();
-    } catch (err) {
-      console.error("[auction-refunds] get route: refund settlement failed", id, err);
-    }
   }
 
   if (auction.status === "ENDED" && payload?.role !== "admin" && auction.winner?.toString() !== payload?.userId) {
@@ -57,7 +52,7 @@ export const PUT = route<{ id: string }>(async (request: NextRequest, { params }
   const { id } = await params;
   const body = await request.json();
 
-  const invalidAmount = ["startingOffer", "registrationFee", "offerUnlockFee"].find(
+  const invalidAmount = ["startingOffer", "registrationFee", "offerUnlockFee", "thresholdAmount"].find(
     (f) => typeof body[f] === "number" && (!Number.isFinite(body[f]) || body[f] < 0 || !Number.isInteger(body[f]))
   );
   if (invalidAmount) {
@@ -65,6 +60,31 @@ export const PUT = route<{ id: string }>(async (request: NextRequest, { params }
   }
 
   const existing = await Auction.findById(id);
+  if (body.isParkingSale) {
+    const start = body.startTime ? new Date(body.startTime) : existing ? new Date(existing.startTime) : null;
+    if (!start || isNaN(start.getTime())) {
+      return badRequest("Parking Sale requires a start date & time");
+    }
+    const end = new Date(start.getTime() + 365 * 24 * 60 * 60 * 1000);
+    body.startTime = start.toISOString();
+    body.endTime = end.toISOString();
+    body.rounds = 1;
+    body.roundTimes = [{ start: start.toISOString(), end: end.toISOString() }];
+    const topOffer = existing && existing.totalOffers > 0
+      ? await Offer.findOne({ auction: id }).sort({ amount: -1 })
+      : null;
+    const prevTop = existing?.roundStates?.[0];
+    body.currentRound = 1;
+    body.roundStates = [{
+      round: 1,
+      status: "pending",
+      currentRound: 1,
+      highestOffer: topOffer?.amount || prevTop?.highestOffer || existing?.currentOffer || existing?.startingOffer || 0,
+      highestBuyer: topOffer?.buyer || prevTop?.highestBuyer || null,
+      startedAt: null,
+      pausedAt: null,
+    }];
+  }
   if (existing && existing.totalOffers === 0 && body.startingOffer) {
     body.currentOffer = body.startingOffer;
   }

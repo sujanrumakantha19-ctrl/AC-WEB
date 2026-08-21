@@ -100,6 +100,7 @@ export default function AdminAuctionDetailsPage() {
   const isLive = auction.status === "LIVE";
   const isEnded = auction.status === "ENDED";
   const isUpcoming = !isLive && !isEnded;
+  const isParkingSale = !!auction.isParkingSale;
   const roundStates = auction.roundStates || [];
 
   const timelineOffers = offers
@@ -229,7 +230,53 @@ export default function AdminAuctionDetailsPage() {
             </div>
 
             <div className="flex flex-wrap justify-between gap-x-6 gap-y-4 mt-4">
-              {roundStates.map((rs: RoundState, i: number) => {
+              {isParkingSale ? (
+                <div className="flex-1 min-w-[170px] p-4 rounded-xl border text-center flex flex-col items-center justify-between gap-2 border-outline-variant/20 bg-surface-container-low">
+                  <div className="flex items-center justify-center gap-1">
+                    <Badge variant="new">PARKING SALE</Badge>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-on-surface">Parking Sale</p>
+                    {!isUpcoming && (
+                      <>
+                        <div>
+                          <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Highest Quote</p>
+                          <p className="text-base font-extrabold font-mono text-primary">
+                            {auction.currentOffer ? formatINR(auction.currentOffer) : "--"}
+                          </p>
+                        </div>
+                        <p className="text-[10px] font-semibold text-outline">Total Quotes: {auction.totalOffers}</p>
+                      </>
+                    )}
+                  </div>
+
+                  {!isUpcoming && (() => {
+                    const topOffer = offers.slice().sort((a, b) => b.amount - a.amount)[0];
+                    const topBuyer = topOffer && typeof topOffer.buyer === "object" ? topOffer.buyer : undefined;
+                    return topBuyer ? (
+                      <div className="flex flex-col items-center gap-1.5 w-full">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-semibold text-primary">
+                          {isEnded ? <span className="text-2xl leading-none">👑</span> : <span className="material-symbols-outlined text-xs">person</span>}
+                          <span>Highest Quote: {topBuyer.name || "—"} ({getCusId(topBuyer)})</span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  <div className="w-full space-y-1 pt-2 mt-1 border-t border-outline-variant/20 text-[10px] font-medium text-on-surface-variant">
+                    <p className="flex items-center justify-center gap-1">
+                      <span className="material-symbols-outlined text-[9px]">timer</span>
+                      Start: {auction.startTime ? new Date(auction.startTime).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—"}
+                    </p>
+                    <p className="flex items-center justify-center gap-1">
+                      <span className="material-symbols-outlined text-[9px]">timer</span>
+                      End: {isEnded ? "Ended" : "Until admin ends"}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                roundStates.map((rs: RoundState, i: number) => {
                 const rt = auction.roundTimes?.[rs.round - 1];
                 const roundWinner = offers
                   .filter((b) => b.round === rs.round)
@@ -305,7 +352,8 @@ export default function AdminAuctionDetailsPage() {
                   </div>
                 </div>
                 );
-              })}
+              })
+              )}
             </div>
           </div>
         </div>
@@ -354,9 +402,11 @@ export default function AdminAuctionDetailsPage() {
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider">Offer Timeline</h3>
               <p className="text-[10px] text-on-surface-variant mt-0.5">
-                {timelineRound === null
-                  ? `Round ${currentRound} (current)`
-                  : `Round ${timelineRound}`} · {timelineOffers.length} {timelineOffers.length === 1 ? "offer" : "offers"}
+                {isParkingSale
+                  ? "Quotes"
+                  : timelineRound === null
+                    ? `Round ${currentRound} (current)`
+                    : `Round ${timelineRound}`} · {timelineOffers.length} {isParkingSale ? (timelineOffers.length === 1 ? "quote" : "quotes") : (timelineOffers.length === 1 ? "offer" : "offers")}
               </p>
             </div>
             {isEnded ? (
@@ -407,7 +457,7 @@ export default function AdminAuctionDetailsPage() {
                           )}
                         </p>
                         <span className="shrink-0 px-2 py-0.5 bg-primary/10 rounded-md text-[10px] font-bold text-primary">
-                          Round {offer.round}
+                          {isParkingSale ? "Quote" : `Round ${offer.round}`}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs">

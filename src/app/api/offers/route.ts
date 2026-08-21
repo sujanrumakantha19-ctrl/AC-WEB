@@ -54,29 +54,38 @@ export const POST = route(async (request: NextRequest) => {
     return badRequest("Auction is not accepting offers");
   }
 
-  const offerRound = round || auction.currentRound;
+  const isParkingSale = !!auction.isParkingSale;
+  const offerRound = isParkingSale ? 1 : round || auction.currentRound;
   const roundIdx = offerRound - 1;
 
   const roundState = auction.roundStates?.[roundIdx];
   if (!roundState || roundState.status !== "active") {
     return badRequest(
       roundState?.status === "paused"
-        ? "This round is paused and is not accepting offers"
-        : "This round is not active for offering"
+        ? isParkingSale
+          ? "This sale is paused and is not accepting quotes"
+          : "This round is paused and is not accepting offers"
+        : isParkingSale
+          ? "This sale is not accepting quotes"
+          : "This round is not active for offering"
     );
   }
 
-  const basePrice = roundIdx > 0
-    ? auction.roundStates[roundIdx - 1]?.highestOffer || auction.startingOffer
-    : auction.startingOffer;
+  const basePrice = isParkingSale
+    ? auction.currentOffer || auction.startingOffer
+    : roundIdx > 0
+      ? auction.roundStates[roundIdx - 1]?.highestOffer || auction.startingOffer
+      : auction.startingOffer;
 
   if (offerAmount <= basePrice) {
     return badRequest(`Offer must be higher than the base price ₹${basePrice.toLocaleString("en-IN")}`);
   }
 
-  const existingOffer = await Offer.findOne({ auction: auctionId, buyer: auth.userId, round: offerRound });
-  if (existingOffer) {
-    return badRequest("You have already placed an offer in this round");
+  if (!isParkingSale) {
+    const existingOffer = await Offer.findOne({ auction: auctionId, buyer: auth.userId, round: offerRound });
+    if (existingOffer) {
+      return badRequest("You have already placed an offer in this round");
+    }
   }
 
   const previousHighestBuyer = auction.roundStates[roundIdx]?.highestBuyer;
@@ -133,10 +142,20 @@ export const POST = route(async (request: NextRequest) => {
       : "A buyer";
 
   await notifyAdmins(
-    "New offer placed",
-    `${buyerName} placed ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} (Round ${offerRound})`,
+    isParkingSale ? "New quote placed" : "New offer placed",
+    isParkingSale
+      ? `${buyerName} quoted ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title}`
+      : `${buyerName} placed ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} (Round ${offerRound})`,
     auction._id
   );
+
+  if (isParkingSale && auction.thresholdAmount && offerAmount >= auction.thresholdAmount) {
+    await notifyAdmins(
+      "Parking sale threshold reached",
+      `${buyerName} placed ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} — meeting the threshold of ₹${auction.thresholdAmount.toLocaleString("en-IN")}. You can end the sale now.`,
+      auction._id
+    );
+  }
 
   broadcastAuctionEvent(String(auctionId), {
     type: "offer",

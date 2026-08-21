@@ -23,7 +23,7 @@ const STATUS_CONFIG: Record<
     border: "border-amber-200",
   },
   REFUND_PENDING: {
-    label: "Refund Pending",
+    label: "Refund Initiated",
     icon: "schedule",
     color: "text-amber-700",
     bg: "bg-amber-50",
@@ -204,6 +204,12 @@ export default function UserPaymentHistoryPage() {
 
                     {/* Meta row */}
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2.5 text-[11px]">
+                      {payment.status === "PAID" && payment.invoiceSentAt && (
+                        <div className="flex items-center gap-1 text-emerald-700 font-bold">
+                          <span className="material-symbols-outlined text-xs">mail</span>
+                          Invoice emailed
+                        </div>
+                      )}
                       <div className="flex items-center gap-1">
                         <span className="text-on-surface-variant">Amount:</span>
                         <span className="font-extrabold text-on-surface">

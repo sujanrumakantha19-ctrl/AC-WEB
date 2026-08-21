@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
 import { ok, created, badRequest, route, requireAdmin } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
-import { syncRefundSettlements } from "@/lib/razorpay-sync";
 import { isSameMonth, isInNextMonth } from "@/lib/auction-status";
+import { notifyWinnerViaEmail } from "@/lib/winner-notify";
 
 export const GET = route(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
@@ -24,10 +24,15 @@ export const GET = route(async (request: NextRequest) => {
     const lastEnd = a.endTime ? new Date(a.endTime) : null;
     const roundOneStart = a.roundTimes?.[0]?.start ? new Date(a.roundTimes[0].start) : firstStart;
     const liveStart = roundOneStart && !isNaN(roundOneStart.getTime()) ? roundOneStart : firstStart;
-    if (firstStart && lastEnd && a.status !== "ENDED") {
-      if (now > lastEnd) newStatus = "ENDED";
-      else if (isSameMonth(now, liveStart)) newStatus = "LIVE";
-      else newStatus = "UPCOMING";
+    if (firstStart && a.status !== "ENDED") {
+      if (a.isParkingSale) {
+        if (liveStart && !isNaN(liveStart.getTime()) && now >= liveStart) newStatus = "LIVE";
+        else newStatus = "UPCOMING";
+      } else if (lastEnd) {
+        if (now > lastEnd) newStatus = "ENDED";
+        else if (isSameMonth(now, liveStart)) newStatus = "LIVE";
+        else newStatus = "UPCOMING";
+      }
     }
 
     if (newStatus === "LIVE" && a.roundTimes?.length > 0) {
@@ -90,6 +95,12 @@ export const GET = route(async (request: NextRequest) => {
       } catch (err) {
         console.error("[auction-refunds] list route: failed to process", a._id, err);
       }
+
+      try {
+        await notifyWinnerViaEmail(a);
+      } catch (err) {
+        console.error("[winner-notify] list route: failed to notify winner", a._id, err);
+      }
     }
 
     if (newStatus !== "ENDED" && newStatus === "UPCOMING" && !isInNextMonth(now, liveStart)) {
@@ -100,15 +111,6 @@ export const GET = route(async (request: NextRequest) => {
       if (parkingSale && !a.isParkingSale) continue;
       matches.push(a);
     }
-  }
-
-  try {
-    const settle = await syncRefundSettlements();
-    if (settle.settled > 0 || settle.failed > 0) {
-      console.log(`[auction-refunds] list route: ${settle.settled} settled, ${settle.failed} failed`);
-    }
-  } catch (err) {
-    console.error("[auction-refunds] list route: refund settlement failed", err);
   }
 
   const total = matches.length;
@@ -137,11 +139,24 @@ export const POST = route(async (request: NextRequest) => {
   const body = await request.json();
   body.lotNumber = await generateLotNumber();
 
-  const invalidAmount = ["startingOffer", "registrationFee", "offerUnlockFee"].find(
+  const invalidAmount = ["startingOffer", "registrationFee", "offerUnlockFee", "thresholdAmount"].find(
     (f) => typeof body[f] === "number" && (!Number.isFinite(body[f]) || body[f] < 0 || !Number.isInteger(body[f]))
   );
   if (invalidAmount) {
     return badRequest(`${invalidAmount} must be a whole number (no decimals)`);
+  }
+
+  const isParkingSale = !!body.isParkingSale;
+  if (isParkingSale) {
+    const start = body.startTime ? new Date(body.startTime) : null;
+    if (!start || isNaN(start.getTime())) {
+      return badRequest("Parking Sale requires a start date & time");
+    }
+    const end = new Date(start.getTime() + 365 * 24 * 60 * 60 * 1000);
+    body.startTime = start.toISOString();
+    body.endTime = end.toISOString();
+    body.rounds = 1;
+    body.roundTimes = [{ start: start.toISOString(), end: end.toISOString() }];
   }
 
   const rounds = body.rounds || 1;

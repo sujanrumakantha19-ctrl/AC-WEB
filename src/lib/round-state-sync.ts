@@ -1,6 +1,7 @@
 import Notification from "@/models/Notification";
 import { isSameMonth } from "@/lib/auction-status";
 import { notifyAdmins, notifyAuctionParticipants, notifyAllCustomers } from "@/lib/auction-notifications";
+import { notifyWinnerViaEmail } from "@/lib/winner-notify";
 
 const fmt = (n?: number) => (n ?? 0).toLocaleString("en-IN");
 
@@ -34,17 +35,24 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
     changed = true;
   }
 
-  if (auction.startTime && auction.endTime && auction.status !== "ENDED") {
+  if (auction.startTime && auction.status !== "ENDED") {
     const firstStart = new Date(auction.startTime);
-    const lastEnd = new Date(auction.endTime);
-    if (now > lastEnd) {
-      if (auction.status !== "ENDED") {
-        auction.status = "ENDED";
+    if (auction.isParkingSale) {
+      if (now >= firstStart && auction.status !== "LIVE") {
+        auction.status = "LIVE";
         changed = true;
       }
-    } else if (isSameMonth(now, firstStart) && auction.status !== "LIVE") {
-      auction.status = "LIVE";
-      changed = true;
+    } else if (auction.endTime) {
+      const lastEnd = new Date(auction.endTime);
+      if (now > lastEnd) {
+        if (auction.status !== "ENDED") {
+          auction.status = "ENDED";
+          changed = true;
+        }
+      } else if (isSameMonth(now, firstStart) && auction.status !== "LIVE") {
+        auction.status = "LIVE";
+        changed = true;
+      }
     }
   }
 
@@ -88,6 +96,17 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
           await notifyAuctionEnded(auction);
         }
       }
+    }
+  }
+
+  if (auction.isParkingSale && auction.status === "LIVE") {
+    const rs = auction.roundStates[0];
+    if (rs && rs.status !== "active") {
+      rs.status = "active";
+      rs.startedAt = rs.startedAt || now;
+      rs.highestOffer = rs.highestOffer || auction.startingOffer;
+      auction.currentRound = 1;
+      changed = true;
     }
   }
 
@@ -163,4 +182,6 @@ export async function notifyAuctionEnded(auction: any) {
       relatedAuction: auction._id,
     });
   }
+
+  await notifyWinnerViaEmail(auction);
 }

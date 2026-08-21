@@ -25,19 +25,24 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
 
   const currentRound = auction.currentRound;
   const roundIdx = currentRound - 1;
-  const basePrice = roundIdx > 0
-    ? auction.roundStates[roundIdx - 1]?.highestOffer || auction.startingOffer
-    : auction.startingOffer;
+  const isParkingSale = !!auction.isParkingSale;
+  const basePrice = isParkingSale
+    ? auction.currentOffer || auction.startingOffer
+    : roundIdx > 0
+      ? auction.roundStates[roundIdx - 1]?.highestOffer || auction.startingOffer
+      : auction.startingOffer;
 
   let userHasOfferThisRound = false;
   let userLastOffer: { amount: number; createdAt: string } | null = null;
 
   if (payload) {
-    const existingOffer = await Offer.findOne({
-      auction: auction._id,
-      buyer: payload.userId,
-      round: currentRound,
-    });
+    const existingOffer = isParkingSale
+      ? await Offer.findOne({ auction: auction._id, buyer: payload.userId }).sort({ createdAt: -1 })
+      : await Offer.findOne({
+          auction: auction._id,
+          buyer: payload.userId,
+          round: currentRound,
+        });
     userHasOfferThisRound = !!existingOffer;
     if (existingOffer) {
       userLastOffer = {

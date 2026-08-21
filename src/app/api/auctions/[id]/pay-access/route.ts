@@ -5,6 +5,7 @@ import Auction from "@/models/Auction";
 import User from "@/models/User";
 import Payment from "@/models/Payment";
 import { notifyAdmins } from "@/lib/auction-notifications";
+import { sendInvoiceForPayment } from "@/lib/invoice-email";
 import { ok, badRequest, route, requireUser, notFound } from "@/lib/api-helpers";
 
 const getRazorpaySecret = () => process.env.RAZORPAY_KEY_SECRET || "UBVj1SwMjuZynLqSUNWOKq2W";
@@ -63,6 +64,13 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
     );
   } catch (err) {
     console.error("[razorpay] failed to mark payment paid", err);
+  }
+
+  const paymentDoc = (await Payment.findOne({ orderId })
+    .select("_id invoiceSentAt")
+    .lean()) as unknown as { _id: unknown; invoiceSentAt?: Date } | null;
+  if (paymentDoc) {
+    await sendInvoiceForPayment(paymentDoc);
   }
 
   return ok({ success: true });

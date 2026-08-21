@@ -133,7 +133,7 @@ export function ParticipantsPopup({
                             </span>
                           ) : user.refundEligible ? (
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
-                              ⏳ Refund Pending
+                              ⏳ Refund Initiated
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-lg text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">

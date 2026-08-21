@@ -17,6 +17,9 @@ import { usePlaceOfferMutation } from "@/services/offers-api";
 import { useAppSelector } from "@/redux/hooks";
 import { useCountdown } from "@/lib/use-countdown";
 
+const fmtShort = (t?: string) =>
+  t ? new Date(t).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+
 export function UserLiveRoomClient({ id }: { id: string }) {
   const router = useRouter();
   const user = useAppSelector((s) => s.auth.user);
@@ -122,6 +125,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
   const userHasOffer = roundState?.userHasOfferThisRound;
   const isEnded = auction.status === "ENDED";
   const isLive = auction.status === "LIVE";
+  const isParkingSale = !!auction.isParkingSale;
   const isRoundActive = roundStates[currentRound - 1]?.status === "active";
   const winnerId = typeof auction.winner === "string" ? auction.winner : auction.winner?._id;
   const isWinner = isEnded && !!userId && !!winnerId && winnerId.toString() === userId.toString();
@@ -190,7 +194,28 @@ export function UserLiveRoomClient({ id }: { id: string }) {
             </div>
 
             <div className="flex flex-wrap justify-between gap-x-6 gap-y-4 mt-4">
-              {roundStates.map((rs: any, i: number) => {
+              {isParkingSale ? (
+                <div className="w-full p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low space-y-3">
+                  <div className="flex flex-wrap justify-between gap-x-6 gap-y-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Sale Started</p>
+                      <p className="text-sm font-extrabold text-primary">{fmtShort(auction.roundTimes?.[0]?.start)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Current Highest Quote</p>
+                      <p className="text-sm font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Total Quotes</p>
+                      <p className="text-sm font-extrabold text-on-surface">{auction.totalOffers}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-on-surface-variant">
+                    Unlimited quotes — the highest quote wins when the admin ends the sale.
+                  </p>
+                </div>
+              ) : (
+              roundStates.map((rs: any, i: number) => {
                 const rt = auction.roundTimes?.[rs.round - 1];
                 const fmt = (t?: string) => t ? new Date(t).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
                 return (
@@ -230,12 +255,63 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                     )}
                   </div>
                 );
-              })}
+              })
+              )}
             </div>
 
-            {isLive && hasAccess && isRoundActive && (
+            {isLive && hasAccess && (isParkingSale ? true : isRoundActive) && (
               <div className="mt-4 p-4 bg-surface-container-low rounded-xl">
-                {userHasOffer ? (
+                {isParkingSale ? (
+                  <>
+                    {userHasOffer && (
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div>
+                          <p className="text-xs font-bold text-on-surface">Your Latest Quote</p>
+                          <p className="text-[10px] text-on-surface-variant mt-0.5">
+                            {roundState?.userLastOffer?.createdAt
+                              ? `Placed ${new Date(roundState.userLastOffer.createdAt).toLocaleString("en-IN", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}`
+                              : "Your most recent quote"}
+                          </p>
+                        </div>
+                        <p className="text-lg font-extrabold font-mono text-primary">
+                          {formatINR(roundState?.userLastOffer?.amount || 0)}
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-xs font-bold text-on-surface">{userHasOffer ? "Place Another Quote" : "Place Your Quote"}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
+                      <p className="text-[10px] font-bold text-outline uppercase">Base Price: {formatINR(basePrice)}</p>
+                      <div className="flex gap-2 flex-1">
+                        <input
+                          type="number"
+                          step={1}
+                          min={basePrice + 1}
+                          value={offerAmount}
+                          onChange={(e) => setOfferAmount(e.target.value)}
+                          placeholder={`Above ${basePrice.toLocaleString("en-IN")}`}
+                          className="flex-1 h-10 rounded-xl px-3 text-xs font-medium focus:outline-none focus:border-primary border border-outline-variant/40"
+                        />
+                        <button
+                          onClick={placeOfferHandler}
+                          disabled={offerLoading}
+                          className="px-6 py-2 bg-primary hover:bg-secondary text-white font-bold text-xs rounded-xl disabled:opacity-50"
+                        >
+                          {offerLoading ? "Placing..." : "Place Quote"}
+                        </button>
+                      </div>
+                    </div>
+                    {auction.thresholdAmount ? (
+                      <p className="text-[10px] text-on-surface-variant mt-2">
+                        A quote of ₹{auction.thresholdAmount.toLocaleString("en-IN")} or more notifies the admin.
+                      </p>
+                    ) : null}
+                  </>
+                ) : userHasOffer ? (
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs font-bold text-on-surface">Offer Placed — Round {currentRound}</p>
@@ -346,7 +422,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                         Latest
                       </span>
                     )}
-                    <span className="text-xs font-bold text-on-surface">Round {offer.round}</span>
+                    <span className="text-xs font-bold text-on-surface">{isParkingSale ? "Quote" : `Round ${offer.round}`}</span>
                   </div>
                   <div className="flex items-center gap-3 whitespace-nowrap">
                     <span className="text-[11px] text-on-surface-variant font-medium">
@@ -405,7 +481,9 @@ export function UserLiveRoomClient({ id }: { id: string }) {
 
         {isEnded && !isWinner && (
           <div className="bg-surface-container-low rounded-2xl p-5 text-center space-y-1">
-            <p className="text-sm font-bold text-on-surface-variant">Round {totalRounds} completed — You lost the auction</p>
+            <p className="text-sm font-bold text-on-surface-variant">
+              {isParkingSale ? "The parking sale has ended — you did not win" : `Round ${totalRounds} completed — You lost the auction`}
+            </p>
             <p className="text-xs text-outline mt-1">Try another upcoming offer. Thanks for participating!</p>
           </div>
         )}

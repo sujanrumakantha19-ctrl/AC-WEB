@@ -4,6 +4,7 @@ import User from "@/models/User";
 import Offer from "@/models/Offer";
 import { ok, route, requireAdmin, notFound } from "@/lib/api-helpers";
 import { computeAuctionRefundStatus } from "@/lib/auction-refunds";
+import { syncRefundSettlements } from "@/lib/razorpay-sync";
 
 export const GET = route<{ id: string }>(async (request: NextRequest, { params }) => {
   const auth = await requireAdmin(request);
@@ -33,6 +34,11 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
   let participants = Array.from(map.values());
 
   if (auction.status === "ENDED") {
+    try {
+      await syncRefundSettlements({ auctionId: id });
+    } catch (err) {
+      console.error("[participants] refund settlement sync failed", id, err);
+    }
     const refundStatus = await computeAuctionRefundStatus(id);
     const statusById = new Map<string, any>();
     for (const rs of refundStatus) statusById.set(rs.buyerId, rs);

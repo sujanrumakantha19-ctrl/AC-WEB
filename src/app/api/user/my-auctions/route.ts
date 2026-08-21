@@ -49,6 +49,8 @@ export const GET = route(async (request: NextRequest) => {
       currentOffer: a.currentOffer,
       startingOffer: a.startingOffer,
       totalOffers: a.totalOffers,
+      isParkingSale: a.isParkingSale,
+      thresholdAmount: a.thresholdAmount,
       isWon,
     };
     if (isWon) {

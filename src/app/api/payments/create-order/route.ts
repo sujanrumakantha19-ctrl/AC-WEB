@@ -9,6 +9,7 @@ import {
   fetchRazorpayOrder,
   fetchRazorpayOrderPayments,
 } from "@/lib/razorpay-sync";
+import { sendInvoiceForPayment } from "@/lib/invoice-email";
 
 const getRazorpayKeys = () => {
   const keyId = process.env.RAZORPAY_KEY_ID || "rzp_test_TNJwP7qOIAy8zV";
@@ -96,6 +97,8 @@ async function reconcilePending(
       await user.save();
     }
 
+    await sendInvoiceForPayment(payment);
+
     return { resolved: true, paid: true };
   }
 
@@ -120,6 +123,7 @@ async function reconcilePending(
         user.paidAccessAuctions = [...(user.paidAccessAuctions || []), auctionId];
         await user.save();
       }
+      await sendInvoiceForPayment(payment);
       return { resolved: true, paid: true };
     }
 

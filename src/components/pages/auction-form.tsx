@@ -50,6 +50,8 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
   const [isPublished, setIsPublished] = useState(false);
   const [error, setError] = useState("");
   const [isParkingSale, setIsParkingSale] = useState(false);
+  const [parkingSaleStart, setParkingSaleStart] = useState("");
+  const [thresholdAmount, setThresholdAmount] = useState("");
 
   const { data: auctionData, isLoading } = useGetAuctionQuery(auctionId || "", { skip: !auctionId });
   const { data: rulesData } = useGetSpecialRulesQuery(undefined, { skip: !!auctionId });
@@ -85,6 +87,8 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
     }
     setImagePreviews([auction.image, ...(auction.images || [])].filter(Boolean) as string[]);
     setIsParkingSale(!!auction.isParkingSale);
+    setParkingSaleStart(auction.isParkingSale && auction.startTime ? toLocalInput(auction.startTime) : "");
+    setThresholdAmount(auction.thresholdAmount ? String(auction.thresholdAmount) : "");
   }, [auction]);
 
   useEffect(() => {
@@ -143,31 +147,33 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
 
     const num = parseInt(rounds) || 1;
     const rtList = roundTimes.slice(0, num);
-    for (let i = 0; i < rtList.length; i++) {
-      const rt = rtList[i];
-      if (!rt.start || !rt.end) {
-        setError(`Round ${i + 1}: Please set both start and end date & time`);
-        setIsSubmitting(false);
-        return;
-      }
-      const startMs = new Date(rt.start).getTime();
-      const endMs = new Date(rt.end).getTime();
-      if (isNaN(startMs) || isNaN(endMs)) {
-        setError(`Round ${i + 1}: Invalid start or end date & time`);
-        setIsSubmitting(false);
-        return;
-      }
-      if (endMs <= startMs) {
-        setError(`Round ${i + 1}: End date & time must be after the start date & time`);
-        setIsSubmitting(false);
-        return;
-      }
-      if (i > 0) {
-        const prevEndMs = new Date(rtList[i - 1].end).getTime();
-        if (startMs < prevEndMs + 60000) {
-          setError(`Round ${i + 1}: Start must be at least 1 minute after the end of Round ${i}`);
+    if (!isParkingSale) {
+      for (let i = 0; i < rtList.length; i++) {
+        const rt = rtList[i];
+        if (!rt.start || !rt.end) {
+          setError(`Round ${i + 1}: Please set both start and end date & time`);
           setIsSubmitting(false);
           return;
+        }
+        const startMs = new Date(rt.start).getTime();
+        const endMs = new Date(rt.end).getTime();
+        if (isNaN(startMs) || isNaN(endMs)) {
+          setError(`Round ${i + 1}: Invalid start or end date & time`);
+          setIsSubmitting(false);
+          return;
+        }
+        if (endMs <= startMs) {
+          setError(`Round ${i + 1}: End date & time must be after the start date & time`);
+          setIsSubmitting(false);
+          return;
+        }
+        if (i > 0) {
+          const prevEndMs = new Date(rtList[i - 1].end).getTime();
+          if (startMs < prevEndMs + 60000) {
+            setError(`Round ${i + 1}: Start must be at least 1 minute after the end of Round ${i}`);
+            setIsSubmitting(false);
+            return;
+          }
         }
       }
     }
@@ -196,12 +202,36 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       setIsSubmitting(false);
       return;
     }
+    if (isParkingSale && thresholdAmount) {
+      const thNum = Number(thresholdAmount);
+      if (!Number.isFinite(thNum) || thNum <= 0 || !Number.isInteger(thNum)) {
+        setError("Threshold Amount must be a positive whole number (no decimals)");
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     const existingMain = isEdit && !mainImage ? imagePreviews[0] : "";
     const existingImages = isEdit ? imagePreviews.slice(1).filter((p) => p && !p.startsWith("data:")) : [];
 
-    const firstStart = roundTimes[0]?.start ? new Date(roundTimes[0].start) : new Date();
-    const lastEnd = roundTimes[roundTimes.length - 1]?.end ? new Date(roundTimes[roundTimes.length - 1].end) : new Date();
+    let firstStart = roundTimes[0]?.start ? new Date(roundTimes[0].start) : new Date();
+    let lastEnd = roundTimes[roundTimes.length - 1]?.end ? new Date(roundTimes[roundTimes.length - 1].end) : new Date();
+    let roundsBody = parseInt(rounds) || 1;
+    let roundTimesBody = roundTimes;
+
+    if (isParkingSale) {
+      const start = parkingSaleStart ? new Date(parkingSaleStart) : null;
+      if (!start || isNaN(start.getTime())) {
+        setError("Please set a start date & time for the parking sale");
+        setIsSubmitting(false);
+        return;
+      }
+      const end = new Date(start.getTime() + 365 * 24 * 60 * 60 * 1000);
+      firstStart = start;
+      lastEnd = end;
+      roundsBody = 1;
+      roundTimesBody = [{ start: start.toISOString(), end: end.toISOString() }];
+    }
 
     const body = {
       title: `${year} ${make} ${model}`,
@@ -222,11 +252,12 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       ownership,
       insurance,
       color,
-      rounds: parseInt(rounds),
-      roundTimes,
+      rounds: roundsBody,
+      roundTimes: roundTimesBody,
       startTime: firstStart.toISOString(),
       endTime: lastEnd.toISOString(),
       isParkingSale,
+      thresholdAmount: isParkingSale && thresholdAmount ? Number(thresholdAmount) : undefined,
       image: mainImage ? await uploadFile(mainImage) : existingMain,
       images: isEdit
         ? [...existingImages, ...(await Promise.all(additionalImages.map(uploadFile)))]
@@ -542,6 +573,39 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
                     <span className={`block w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${isParkingSale ? "translate-x-5" : "translate-x-0.5"}`} />
                   </button>
                 </label>
+
+                {isParkingSale && (
+                  <div className="space-y-3.5 pt-3 border-t border-outline-variant/20">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-on-surface-variant">Sale Start Date &amp; Time <span className="text-error">*</span></label>
+                      <input
+                        className="h-10 rounded-xl px-3 text-xs font-medium text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary"
+                        type="datetime-local"
+                        value={parkingSaleStart}
+                        onChange={(e) => setParkingSaleStart(e.target.value)}
+                        required
+                      />
+                      <p className="text-[10px] text-on-surface-variant">
+                        The sale goes live automatically at this time.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-on-surface-variant">Threshold Amount (₹)</label>
+                      <input
+                        className="h-10 rounded-xl px-3 text-xs font-bold text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary"
+                        type="number"
+                        step={1}
+                        min="1"
+                        value={thresholdAmount}
+                        onChange={(e) => setThresholdAmount(e.target.value)}
+                        placeholder="Notify admin when a quote reaches this amount"
+                      />
+                      <p className="text-[10px] text-on-surface-variant">
+                        Admins are notified every time a quote meets or exceeds this amount.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white p-6 rounded-2xl border border-outline-variant/30 space-y-4">
@@ -602,6 +666,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
             </div>
           </section>
 
+          {!isParkingSale && (
           <section className="grid grid-cols-12 gap-6">
             <div className="col-span-12 space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-outline-variant/30 space-y-4">
@@ -677,6 +742,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
             </div>
 
           </section>
+          )}
 
           <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30">
             <p className="text-[11px] font-medium text-on-surface-variant">

@@ -210,6 +210,13 @@ export default function RegistrationFeePaymentPage() {
           </div>
         </div>
 
+        <div className="p-3 bg-primary/5 border border-primary/15 rounded-xl text-[11px] font-medium text-primary flex items-start gap-2">
+          <span className="material-symbols-outlined text-sm mt-px">mail</span>
+          <span>
+            Your payment receipt (invoice) has been emailed to your registered email address.
+          </span>
+        </div>
+
         <div className="space-y-2">
           <button
             onClick={() => router.push(`/user/live/${auctionId}`)}

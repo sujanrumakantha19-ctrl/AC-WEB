@@ -26,6 +26,8 @@ export function PublicAuctionDetailsClient({ id }: { id: string }) {
     return <AuctionDetailSkeleton />;
   }
 
+  const isParkingSale = !!auction.isParkingSale;
+
   return (
     <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop py-unit-lg w-full space-y-unit-lg">
       <div className="flex items-center gap-2 text-label-sm text-on-surface-variant">
@@ -39,8 +41,16 @@ export function PublicAuctionDetailsClient({ id }: { id: string }) {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-outline-variant/20 pb-unit-md">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <Badge variant="live" pulse>LIVE AUCTION</Badge>
-            <Badge variant="success">Reserve Met</Badge>
+            {isParkingSale ? (
+              <Badge variant={auction.status === "LIVE" ? "live" : "warning"} pulse={auction.status === "LIVE"}>
+                {auction.status === "LIVE" ? "PARKING SALE LIVE" : "PARKING SALE"}
+              </Badge>
+            ) : (
+              <>
+                <Badge variant="live" pulse>LIVE AUCTION</Badge>
+                <Badge variant="success">Reserve Met</Badge>
+              </>
+            )}
             <span className="text-label-sm text-outline">{auction.lotNumber}</span>
           </div>
           <h1 className="text-2xl md:text-headline-lg font-bold text-on-surface">
@@ -150,7 +160,22 @@ export function PublicAuctionDetailsClient({ id }: { id: string }) {
             </div>
           )}
 
-          {auction.rounds && auction.roundTimes && auction.roundTimes.length > 0 && (
+          {isParkingSale ? (
+            <div className="bg-white p-unit-lg rounded-2xl card-shadow space-y-3">
+              <h3 className="text-headline-md font-bold text-on-surface">Parking Sale</h3>
+              <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
+                <span className="text-sm font-bold text-on-surface">
+                  {auction.status === "LIVE" ? "Sale in progress" : "Sale starts"}
+                </span>
+                <span className="text-xs text-on-surface-variant">
+                  {auction.startTime ? new Date(auction.startTime).toLocaleString() : "—"}
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant">
+                Quotes are accepted until the admin ends the sale.
+              </p>
+            </div>
+          ) : auction.rounds && auction.roundTimes && auction.roundTimes.length > 0 && (
             <div className="bg-white p-unit-lg rounded-2xl card-shadow space-y-3">
               <h3 className="text-headline-md font-bold text-on-surface">Round Schedule ({auction.rounds} Rounds)</h3>
               <div className="space-y-2">
@@ -203,16 +228,24 @@ export function PublicAuctionDetailsClient({ id }: { id: string }) {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-outline">Time Remaining</p>
+                <p className="text-xs text-outline">
+                  {isParkingSale ? (auction.status === "LIVE" ? "Sale Status" : "Sale Starts") : "Time Remaining"}
+                </p>
                 <p className="text-label-md font-bold text-tertiary-container animate-pulse-accent">
-                  ⏱ {auction.endTime}
+                  {isParkingSale
+                    ? auction.status === "LIVE"
+                      ? "In Progress"
+                      : auction.startTime
+                        ? new Date(auction.startTime).toLocaleString()
+                        : "—"
+                    : `⏱ ${auction.endTime}`}
                 </p>
               </div>
             </div>
 
             <Link href={`/user/live/${auction.id}`}>
               <Button variant="primary" size="lg" className="w-full text-base font-bold shadow-lg">
-                Sign In & Offer Now ({formatINR((auction.currentOffer || auction.startingOffer) + 10000)})
+                {isParkingSale ? "Sign In & Quote Now" : "Sign In & Offer Now"} ({formatINR((auction.currentOffer || auction.startingOffer) + 10000)})
               </Button>
             </Link>
 

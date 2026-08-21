@@ -15,6 +15,9 @@ import type { RoundState, Offer } from "@/types";
 
 const buyerOf = (offer: Offer) => (typeof offer.buyer === "object" ? offer.buyer : undefined);
 
+const fmtTime = (t?: string) =>
+  t ? new Date(t).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+
 export default function AdminLiveControlRoomPage() {
   const params = useParams();
   const id = (params?.id as string) || "";
@@ -218,6 +221,32 @@ export default function AdminLiveControlRoomPage() {
               </div>
             </div>
 
+            {auction.isParkingSale ? (
+            <div id="round-cards-section" className="mt-4 p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low space-y-3">
+              <div className="flex flex-wrap justify-between gap-x-6 gap-y-3">
+                <div>
+                  <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Sale Start Time</p>
+                  <p className="text-sm font-extrabold text-on-surface">{fmtTime(auction.roundTimes?.[0]?.start)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Threshold</p>
+                  <p className="text-sm font-extrabold text-primary">{auction.thresholdAmount ? formatINR(auction.thresholdAmount) : "—"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Current Highest</p>
+                  <p className="text-sm font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Total Quotes</p>
+                  <p className="text-sm font-extrabold text-on-surface">{auction.totalOffers}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-on-surface-variant pt-2 border-t border-outline-variant/20">
+                <span className="material-symbols-outlined text-xs">info</span>
+                Parking sale accepts unlimited quotes until the admin ends it. Quoting is available from the start time.
+              </div>
+            </div>
+            ) : (
             <div id="round-cards-section" className="flex flex-wrap justify-between gap-x-6 gap-y-4 mt-4">
               {roundStates.map((rs: RoundState, i: number) => {
                 const rt = auction.roundTimes?.[rs.round - 1];
@@ -356,9 +385,27 @@ export default function AdminLiveControlRoomPage() {
                 );
               })}
             </div>
+            )}
 
             <div className="flex flex-wrap justify-between items-center gap-4 mt-3">
               <div className="flex flex-wrap gap-2">
+                {auction.isParkingSale ? (
+                  <>
+                    {auction.status !== "ENDED" && (
+                      <button onClick={() => handleAction("end")} disabled={loading}
+                        className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                        ⏹ End Parking Sale
+                      </button>
+                    )}
+                    {auction.status !== "ENDED" && (
+                      <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
+                        className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
+                        🛑 Cancel
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
                 {auction.status !== "ENDED" && !isActive && !isPaused && (
                   <button onClick={() => handleAction("start")} disabled={loading}
                     className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 disabled:opacity-50">
@@ -403,8 +450,10 @@ export default function AdminLiveControlRoomPage() {
                     🛑 Cancel
                   </button>
                 )}
+                  </>
+                )}
               </div>
-              {auction.status !== "ENDED" && currentRoundData?.status !== "completed" && (
+              {!auction.isParkingSale && auction.status !== "ENDED" && currentRoundData?.status !== "completed" && (
                 <div className="flex gap-2 w-[180px] justify-end">
                   {editingTimes ? (
                     <>

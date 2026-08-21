@@ -67,6 +67,7 @@ export default function MyAuctionDetailPage() {
   const fmt = (t?: string) => t ? new Date(t).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
   const isEnded = auction.status === "ENDED";
+  const isParkingSale = !!auction.isParkingSale;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -122,8 +123,8 @@ export default function MyAuctionDetailPage() {
               <p className="text-sm font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Rounds</p>
-              <p className="text-sm font-extrabold">{auction.rounds}</p>
+              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">{isParkingSale ? "Type" : "Rounds"}</p>
+              <p className="text-sm font-extrabold">{isParkingSale ? "Parking Sale" : auction.rounds}</p>
             </div>
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">My Offers</p>
@@ -137,8 +138,10 @@ export default function MyAuctionDetailPage() {
               <p className="text-sm font-bold text-on-surface mt-0.5">{fmt(auction.roundTimes?.[0]?.start || auction.startTime)}</p>
             </div>
             <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-outline">End</p>
-              <p className="text-sm font-bold text-on-surface mt-0.5">{fmt(auction.endTime)}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-outline">{isParkingSale ? "Sale End" : "End"}</p>
+              <p className="text-sm font-bold text-on-surface mt-0.5">
+                {isParkingSale ? (isEnded ? "Ended" : "Until admin ends") : fmt(auction.endTime)}
+              </p>
             </div>
             <div className="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20">
               <p className="text-[10px] font-bold uppercase tracking-wider text-outline">Result</p>
@@ -156,8 +159,12 @@ export default function MyAuctionDetailPage() {
 
       <div className="bg-white rounded-2xl border p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-extrabold">My Offers by Round</h2>
-          <span className="text-[10px] font-bold text-outline uppercase tracking-wider">{rounds.length} Round{rounds.length > 1 ? "s" : ""}</span>
+          <h2 className="text-sm font-extrabold">{isParkingSale ? "My Quotes" : "My Offers by Round"}</h2>
+          <span className="text-[10px] font-bold text-outline uppercase tracking-wider">
+            {isParkingSale
+              ? `${offers.length} Quote${offers.length === 1 ? "" : "s"}`
+              : `${rounds.length} Round${rounds.length > 1 ? "s" : ""}`}
+          </span>
         </div>
         {rounds.length === 0 ? (
           <p className="text-xs text-center py-4 text-on-surface-variant">No round data available.</p>
@@ -174,21 +181,21 @@ export default function MyAuctionDetailPage() {
               >
                 <div>
                   <div className="flex items-center justify-center gap-2">
-                    <p className="text-xs font-bold text-on-surface">Round {r.round}</p>
+                    <p className="text-xs font-bold text-on-surface">{isParkingSale ? "Parking Sale" : `Round ${r.round}`}</p>
                     {r.state && (
                       <span className="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
                         {r.state.status}
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] font-bold text-outline uppercase tracking-wider mt-2">My Offer</p>
+                  <p className="text-[10px] font-bold text-outline uppercase tracking-wider mt-2">{isParkingSale ? "My Quote" : "My Offer"}</p>
                   <p className={`text-lg font-extrabold font-mono ${r.myOffer ? "text-primary" : "text-outline"}`}>
                     {r.myOffer ? formatINR(r.myOffer) : "No Offer"}
                   </p>
                 </div>
                 <div className="pt-2 border-t border-outline-variant/20 space-y-1 text-[10px] text-on-surface-variant font-medium">
                   <p>Start: {fmt(r.rt?.start)}</p>
-                  <p>End: {fmt(r.rt?.end)}</p>
+                  <p>End: {isParkingSale ? "Until admin ends" : fmt(r.rt?.end)}</p>
                 </div>
               </div>
             ))}

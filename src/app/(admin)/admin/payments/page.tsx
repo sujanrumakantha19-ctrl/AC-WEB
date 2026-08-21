@@ -98,7 +98,7 @@ export default function AdminPaymentHistoryPage() {
       case "SUCCESS":
         return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 whitespace-nowrap inline-block shadow-2xs">✓ Paid</span>;
       case "REFUND_PENDING":
-        return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 whitespace-nowrap inline-block shadow-2xs">⏳ Refund Pending</span>;
+        return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 whitespace-nowrap inline-block shadow-2xs">⏳ Refund Initiated</span>;
       case "REFUNDED":
         return <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 whitespace-nowrap inline-block shadow-2xs">💸 Refunded</span>;
       case "FAILED":
@@ -202,7 +202,7 @@ export default function AdminPaymentHistoryPage() {
               <span>·</span>
               <span className="text-amber-700 font-mono">{summary.pendingTransactions || 0} Pending</span>
               <span>·</span>
-              <span className="text-amber-700 font-mono">{summary.refundPendingTransactions || 0} Refund Pending</span>
+              <span className="text-amber-700 font-mono">{summary.refundPendingTransactions || 0} Refund Initiated</span>
             </div>
           )}
           <p className="text-[10px] text-on-surface-variant font-medium">
@@ -265,7 +265,7 @@ export default function AdminPaymentHistoryPage() {
               activeStatus === "REFUND_PENDING" ? "bg-primary text-white shadow-xs" : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
-            Refund Pending
+            Refund Initiated
           </button>
           <button
             onClick={() => setActiveStatus("REFUNDED")}

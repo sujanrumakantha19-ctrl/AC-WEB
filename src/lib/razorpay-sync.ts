@@ -4,6 +4,7 @@ import Payment from "@/models/Payment";
 import User from "@/models/User";
 import Notification from "@/models/Notification";
 import { notifyAdmins } from "@/lib/auction-notifications";
+import { sendInvoiceForPayment } from "@/lib/invoice-email";
 
 const getKeys = () => ({
   keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_TNJwP7qOIAy8zV",
@@ -209,6 +210,8 @@ export async function syncPendingPayments(): Promise<{
         }
       }
 
+      await sendInvoiceForPayment(payment);
+
       paid += 1;
       continue;
     }
@@ -236,6 +239,8 @@ export async function syncPendingPayments(): Promise<{
             await user.save();
           }
         }
+
+        await sendInvoiceForPayment(payment);
 
         paid += 1;
         continue;
@@ -308,8 +313,16 @@ export async function syncPendingPayments(): Promise<{
  *    add the auction to the user's `refundedAuctions`, and notify the customer.
  *  - failed    → mark Payment FAILED with a refundError and notify admins.
  *  - pending   → leave as REFUND_PENDING (retry next run).
+ *
+ * This calls the Razorpay refund status API and should therefore only be
+ * invoked when a refund-status screen is being viewed (on-demand), never from
+ * a background job or unrelated pages. An optional filter scopes the check to
+ * only the payments being displayed.
  */
-export async function syncRefundSettlements(): Promise<{
+export async function syncRefundSettlements(filter?: {
+  userId?: string;
+  auctionId?: string;
+}): Promise<{
   scanned: number;
   settled: number;
   failed: number;
@@ -317,10 +330,14 @@ export async function syncRefundSettlements(): Promise<{
 }> {
   await dbConnect();
 
-  const refundingPayments = await Payment.find({
+  const query: Record<string, unknown> = {
     status: "REFUND_PENDING",
     refundId: { $exists: true, $ne: "" },
-  })
+  };
+  if (filter?.userId) query.user = filter.userId;
+  if (filter?.auctionId) query.auction = filter.auctionId;
+
+  const refundingPayments = await Payment.find(query)
     .sort({ refundInitiatedAt: 1 })
     .limit(200)
     .populate("auction", "title")
