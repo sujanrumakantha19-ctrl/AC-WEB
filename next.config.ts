@@ -15,6 +15,39 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
     ],
+  async redirects() {
+    return [
+      {
+        source: "/contact-us",
+        destination: "/about",
+        permanent: true,
+      },
+      {
+        source: "/contact-1",
+        destination: "/about",
+        permanent: true,
+      },
+      {
+        source: "/new-page-2",
+        destination: "/auctions",
+        permanent: true,
+      },
+      {
+        source: "/new-page-1",
+        destination: "/auctions",
+        permanent: true,
+      },
+      {
+        source: "/home",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/services",
+        destination: "/about",
+        permanent: true,
+      },
+    ];
   },
 };
 
