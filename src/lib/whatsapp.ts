@@ -29,7 +29,7 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en",
+          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en_US",
           components: [
             {
               type: "body",
@@ -90,7 +90,7 @@ export async function sendWhatsAppAuctionReminderMessage(
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en",
+          language: process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en_US",
           components: [
             {
               type: "body",
