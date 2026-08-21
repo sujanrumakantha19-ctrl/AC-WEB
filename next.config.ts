@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
     ],
+  },
   async redirects() {
     return [
       {
