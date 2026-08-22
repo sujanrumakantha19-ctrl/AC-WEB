@@ -14,7 +14,7 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
     return;
   }
 
-  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_welcome_utility_v1_20260822204918";
+  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_created_utility_v1_20260822210848";
   const firstName = name.trim().split(/\s+/)[0] || name;
   const effectiveGroupLink = groupLink && groupLink.trim() ? groupLink.trim() : "Contact Admin";
 
