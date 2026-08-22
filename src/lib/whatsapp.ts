@@ -76,7 +76,7 @@ export async function sendWhatsAppAuctionReminderMessage(
     return;
   }
 
-  const templateName = process.env.CHATMITRA_REMINDER_TEMPLATE_NAME || "auction_reminder_v1_20260819153142";
+  const templateName = process.env.CHATMITRA_REMINDER_TEMPLATE_NAME || "auction_reminder_utility_v1_20260822205437";
   const firstName = name.trim().split(/\s+/)[0] || name;
 
   const parameters = [
