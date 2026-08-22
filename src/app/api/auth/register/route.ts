@@ -8,8 +8,21 @@ import { created, badRequest, conflict, route } from "@/lib/api-helpers";
 async function generateCusId(): Promise<string> {
   const now = new Date();
   const suffix = `${now.getMonth() + 1}${String(now.getFullYear()).slice(-2)}`;
-  const count = await User.countDocuments({ cusId: { $regex: new RegExp(`^CUS-\\d+${suffix}$`) } });
-  return `CUS-${count + 1}${suffix}`;
+  const users = await User.find({ cusId: { $regex: new RegExp(`^CUS-\\d+${suffix}$`) } })
+    .select("cusId")
+    .lean();
+
+  let maxNum = 0;
+  for (const u of users) {
+    if (u.cusId) {
+      const match = u.cusId.match(/^CUS-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+  }
+  return `CUS-${maxNum + 1}${suffix}`;
 }
 
 export const POST = route(async (request: NextRequest) => {
