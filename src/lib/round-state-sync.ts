@@ -1,6 +1,6 @@
 import Notification from "@/models/Notification";
 import { isSameMonth } from "@/lib/auction-status";
-import { notifyAdmins, notifyAuctionParticipants, notifyAllCustomers } from "@/lib/auction-notifications";
+import { notifyAdmins, notifyAuctionParticipants, notifyAllCustomers, sendAuctionWhatsAppReminders } from "@/lib/auction-notifications";
 import { notifyWinnerViaEmail } from "@/lib/winner-notify";
 
 const fmt = (n?: number) => (n ?? 0).toLocaleString("en-IN");
@@ -37,6 +37,19 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
 
   if (auction.startTime && auction.status !== "ENDED") {
     const firstStart = new Date(auction.startTime);
+    const roundOneStart = auction.roundTimes?.[0]?.start ? new Date(auction.roundTimes[0].start) : firstStart;
+    const liveStart = roundOneStart && !isNaN(roundOneStart.getTime()) ? roundOneStart : firstStart;
+
+    // ── Send WhatsApp reminder 15 minutes before auction start (Only to registered buyers) ──
+    if (liveStart && !auction.reminderSent && auction.status !== "ENDED") {
+      const diffMs = liveStart.getTime() - now.getTime();
+      if (diffMs > 0 && diffMs <= 15 * 60 * 1000) {
+        sendAuctionWhatsAppReminders(auction).catch((err) =>
+          console.error("[whatsapp] sync reminder trigger failed", err)
+        );
+      }
+    }
+
     if (auction.isParkingSale) {
       if (now >= firstStart && auction.status !== "LIVE") {
         auction.status = "LIVE";

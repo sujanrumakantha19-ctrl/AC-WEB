@@ -113,16 +113,24 @@ export async function sendWelcomeMessageToUser(userId: string) {
   let groupLink = "";
   if (user.whatsAppGroup) {
     const group = await WhatsAppGroup.findById(user.whatsAppGroup).exec();
-    if (group && group.status === "active") {
+    if (group && group.status === "active" && group.link) {
       groupLink = group.link;
     }
   }
 
-  await sendWhatsAppWelcomeMessage(user.name, user.phone, groupLink);
+  if (!groupLink) {
+    const anyActiveGroup = await WhatsAppGroup.findOne({ status: "active" }).sort({ members: 1 }).exec();
+    if (anyActiveGroup && anyActiveGroup.link) {
+      groupLink = anyActiveGroup.link;
+    }
+  }
+
+  const finalLink = groupLink || "https://vksautoservices.org";
+  await sendWhatsAppWelcomeMessage(user.name, user.phone, finalLink);
   user.whatsAppGroupLinkSent = true;
   await user.save();
 
-  return { sent: true, link: groupLink };
+  return { sent: true, link: finalLink };
 }
 
 /**

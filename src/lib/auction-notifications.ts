@@ -81,3 +81,55 @@ export async function notifyAllCustomers(
     console.error("[notify] customer broadcast failed", err);
   }
 }
+
+/**
+ * Send WhatsApp Auction Reminder 15 minutes before the auction starts.
+ * Sent ONLY to users who have registered/paid for that specific auction.
+ */
+export async function sendAuctionWhatsAppReminders(auction: any) {
+  try {
+    if (auction.reminderSent) return;
+
+    // Find ONLY users who have paid/unlocked access to this auction
+    const registeredUsers = await User.find({
+      paidAccessAuctions: auction._id,
+      phone: { $exists: true, $ne: "" },
+    }).select("name phone").lean();
+
+    if (registeredUsers.length === 0) {
+      auction.reminderSent = true;
+      await auction.save();
+      return;
+    }
+
+    const { sendWhatsAppAuctionReminderMessage } = await import("@/lib/whatsapp");
+    const roundOneStart = auction.roundTimes?.[0]?.start || auction.startTime;
+    const formattedStartTime = roundOneStart
+      ? new Date(roundOneStart).toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Upcoming";
+
+    const auctionUrl = `https://vksautoservices.org/user/live/${auction._id}`;
+
+    for (const u of registeredUsers) {
+      if (u.phone) {
+        await sendWhatsAppAuctionReminderMessage(
+          u.name,
+          u.phone,
+          auction.title,
+          formattedStartTime,
+          auctionUrl
+        );
+      }
+    }
+
+    auction.reminderSent = true;
+    await auction.save();
+  } catch (err) {
+    console.error("[whatsapp] auction reminder failed", err);
+  }
+}
