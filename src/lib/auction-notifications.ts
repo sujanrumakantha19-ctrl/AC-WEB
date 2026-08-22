@@ -84,19 +84,19 @@ export async function notifyAllCustomers(
 
 /**
  * Send WhatsApp Auction Reminder 15 minutes before the auction starts.
- * Sent ONLY to users who have registered/paid for that specific auction.
+ * Sent to ALL registered customer accounts across the platform.
  */
 export async function sendAuctionWhatsAppReminders(auction: any) {
   try {
     if (auction.reminderSent) return;
 
-    // Find ONLY users who have paid/unlocked access to this auction
-    const registeredUsers = await User.find({
-      paidAccessAuctions: auction._id,
+    // Find ALL registered users with a valid phone number
+    const allUsers = await User.find({
+      role: "user",
       phone: { $exists: true, $ne: "" },
     }).select("name phone").lean();
 
-    if (registeredUsers.length === 0) {
+    if (allUsers.length === 0) {
       auction.reminderSent = true;
       await auction.save();
       return;
@@ -115,7 +115,7 @@ export async function sendAuctionWhatsAppReminders(auction: any) {
 
     const auctionUrl = `https://vksautoservices.org/user/live/${auction._id}`;
 
-    for (const u of registeredUsers) {
+    for (const u of allUsers) {
       if (u.phone) {
         await sendWhatsAppAuctionReminderMessage(
           u.name,

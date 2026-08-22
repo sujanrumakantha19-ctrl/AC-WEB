@@ -123,10 +123,10 @@ async function sendReminder(name, phone, vehicleTitle, startTime, auctionUrl = "
 
 async function run() {
   await getApprovedTemplates();
-  const numbers = ["6369455056", "9902262397", "9902262307"];
+  const numbers = ["9902262397"];
   for (const num of numbers) {
     console.log(`\n================ Testing ${num} ================`);
-    await sendWelcome("Sujan", num, "https://vksautoservices.org");
+    await sendWelcome("Sujan", num, "Contact Admin");
     await sendReminder("Sujan", num, "2022 Hyundai Creta SX", "03:00 PM Today");
   }
 }

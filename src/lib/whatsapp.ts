@@ -16,7 +16,7 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
 
   const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_welcome_v1_20260819151520";
   const firstName = name.trim().split(/\s+/)[0] || name;
-  const effectiveGroupLink = groupLink && groupLink.trim() ? groupLink.trim() : "https://vksautoservices.org";
+  const effectiveGroupLink = groupLink && groupLink.trim() ? groupLink.trim() : "Contact Admin";
 
   const parameters: { type: string; text: string }[] = [
     { type: "text", text: firstName },

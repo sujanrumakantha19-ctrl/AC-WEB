@@ -125,7 +125,7 @@ export async function sendWelcomeMessageToUser(userId: string) {
     }
   }
 
-  const finalLink = groupLink || "https://vksautoservices.org";
+  const finalLink = groupLink || "Contact Admin";
   await sendWhatsAppWelcomeMessage(user.name, user.phone, finalLink);
   user.whatsAppGroupLinkSent = true;
   await user.save();
