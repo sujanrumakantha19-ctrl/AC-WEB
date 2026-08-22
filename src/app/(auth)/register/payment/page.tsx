@@ -7,7 +7,7 @@ import { useGetAuctionQuery, usePayAccessMutation } from "@/services/auctions-ap
 import { useGetRegistrationFeeQuery } from "@/services/settings-api";
 import { errorMessage } from "@/lib/helpers";
 
-const DEFAULT_FEE = 588.82;
+const DEFAULT_FEE = 499;
 
 type Razorpay = {
   open: () => void;
@@ -55,10 +55,12 @@ export default function RegistrationFeePaymentPage() {
   const auction = auctionData?.auction;
   const auctionTitle = auction?.title || "";
   const auctionFee = auction?.registrationFee || 0;
-  const settingFee = feeData?.value ? parseInt(feeData.value) : NaN;
-  const registrationFee =
+  const settingFee = feeData?.value ? parseFloat(feeData.value) : NaN;
+  const baseFee =
     auctionFee || (!isNaN(settingFee) && settingFee > 0 ? settingFee : DEFAULT_FEE);
-  const totalAmount = registrationFee;
+  const gstAmount = +(baseFee * 0.18).toFixed(2);
+  const totalAmount = +(baseFee + gstAmount).toFixed(2);
+  const registrationFee = totalAmount;
   const loading = (!!auctionId && !auctionData) || !feeData;
 
   const loadRazorpayScript = useCallback((): Promise<void> => {
@@ -254,14 +256,14 @@ export default function RegistrationFeePaymentPage() {
                 <span className="material-symbols-outlined text-primary text-lg">verified</span>
                 <span className="text-xs text-on-surface-variant">Registration Fee (Base)</span>
               </div>
-              <span className="text-sm font-bold text-on-surface">₹499.00</span>
+              <span className="text-sm font-bold text-on-surface">₹{baseFee.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-lg">receipt_long</span>
                 <span className="text-xs text-on-surface-variant">GST (18%)</span>
               </div>
-              <span className="text-sm font-bold text-on-surface">₹89.82</span>
+              <span className="text-sm font-bold text-on-surface">₹{gstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div className="border-t border-outline-variant/30 pt-3 flex items-center justify-between">
               <span className="text-sm font-bold text-on-surface">Total Payable</span>
