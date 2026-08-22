@@ -34,7 +34,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
   const [mileage, setMileage] = useState("");
   const [location, setLocation] = useState("");
   const [startingOffer, setStartingOffer] = useState("");
-  const [registrationFee, setRegistrationFee] = useState("599");
+  const [registrationFee, setRegistrationFee] = useState("588.82");
   const [offerUnlockFee, setOfferUnlockFee] = useState("");
   const [ownership, setOwnership] = useState("");
   const [insurance, setInsurance] = useState("");
@@ -74,7 +74,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
     setMileage(auction.mileage ? String(auction.mileage) : "");
     setLocation(auction.location || "");
     setStartingOffer(auction.startingOffer ? String(auction.startingOffer) : "");
-    setRegistrationFee(auction.registrationFee ? String(auction.registrationFee) : "599");
+    setRegistrationFee(auction.registrationFee ? String(auction.registrationFee) : "588.82");
     setOfferUnlockFee(auction.offerUnlockFee ? String(auction.offerUnlockFee) : "");
     setOwnership(auction.ownership || "");
     setInsurance(auction.insurance || "");
@@ -192,8 +192,8 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       setIsSubmitting(false);
       return;
     }
-    if (!Number.isFinite(regFeeNum) || regFeeNum <= 0 || !Number.isInteger(regFeeNum)) {
-      setError("Registration Fee must be a positive whole number (no decimals)");
+    if (!Number.isFinite(regFeeNum) || regFeeNum <= 0) {
+      setError("Registration Fee must be a positive number");
       setIsSubmitting(false);
       return;
     }

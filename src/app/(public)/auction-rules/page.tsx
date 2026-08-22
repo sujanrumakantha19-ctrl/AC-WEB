@@ -7,7 +7,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Pay the registration fee",
-    body: "Pay the Registration Fee (₹599 per auction, as displayed on the listing) through the online payment gateway to participate in that auction.",
+    body: "Pay the Registration Fee (₹499 + 18% GST, Total ₹588.82 per auction, as displayed on the listing) through the online payment gateway to participate in that auction.",
   },
   {
     title: "Place offers across rounds",
@@ -31,7 +31,7 @@ const OFFER_RULES = [
 const FEES = [
   {
     title: "Registration Fee",
-    body: "₹599 per auction (as displayed on the listing). Paid once per auction to participate. Refundable only as described in the Refund Policy.",
+    body: "₹499 + 18% GST (Total ₹588.82 per auction, as displayed on the listing). Paid once per auction to participate. Refundable only as described in the Refund Policy.",
   },
   {
     title: "Offer Access Fee",

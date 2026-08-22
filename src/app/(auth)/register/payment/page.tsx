@@ -7,7 +7,7 @@ import { useGetAuctionQuery, usePayAccessMutation } from "@/services/auctions-ap
 import { useGetRegistrationFeeQuery } from "@/services/settings-api";
 import { errorMessage } from "@/lib/helpers";
 
-const DEFAULT_FEE = 500;
+const DEFAULT_FEE = 588.82;
 
 type Razorpay = {
   open: () => void;
@@ -252,13 +252,20 @@ export default function RegistrationFeePaymentPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-lg">verified</span>
-                <span className="text-xs text-on-surface-variant">Registration Fee</span>
+                <span className="text-xs text-on-surface-variant">Registration Fee (Base)</span>
               </div>
-              <span className="text-sm font-bold text-on-surface">₹{registrationFee.toLocaleString("en-IN")}</span>
+              <span className="text-sm font-bold text-on-surface">₹499.00</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-lg">receipt_long</span>
+                <span className="text-xs text-on-surface-variant">GST (18%)</span>
+              </div>
+              <span className="text-sm font-bold text-on-surface">₹89.82</span>
             </div>
             <div className="border-t border-outline-variant/30 pt-3 flex items-center justify-between">
               <span className="text-sm font-bold text-on-surface">Total Payable</span>
-              <span className="text-lg font-extrabold text-primary">₹{totalAmount.toLocaleString("en-IN")}</span>
+              <span className="text-lg font-extrabold text-primary">₹{totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         </div>

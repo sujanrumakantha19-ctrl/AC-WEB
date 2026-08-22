@@ -46,7 +46,7 @@ export default function RefundPolicyPage() {
       <section className="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/30 shadow-xs space-y-2">
         <h2 className="text-base font-extrabold text-on-surface">Core Policy</h2>
         <p className="text-sm text-on-surface-variant leading-relaxed">
-          A Registration Fee of ₹599 per auction is charged to participate in that auction. This fee is
+          A Registration Fee of ₹499 + 18% GST (Total ₹588.82) per auction is charged to participate in that auction. This fee is
           refundable only in the circumstances described below. Refunds are always processed back to the
           original payment method.
         </p>
