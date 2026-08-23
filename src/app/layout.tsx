@@ -14,8 +14,12 @@ const inter = Inter({
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("vks-theme");if(t!=="light"&&t!=="dark"){t="light";}document.documentElement.setAttribute("data-theme",t);var s=parseFloat(localStorage.getItem("vks-font-scale")||"1");if(!isNaN(s)&&s>=0.8&&s<=1.2){document.documentElement.style.fontSize=(16*s)+"px";}}catch(e){document.documentElement.setAttribute("data-theme","light");}})();`;
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.vksautoservices.org"),
   title: "VKS Autoservices | Premium Automotive Auction Platform",
   description: "Experience the thrill of acquiring premium SUVs and luxury sedans through India's most trusted offering platform.",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [
       { url: "/icon.png", type: "image/png" },
@@ -36,6 +40,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/icon.png" type="image/png" />
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link
           rel="stylesheet"
