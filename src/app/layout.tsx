@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`light h-full antialiased ${inter.className}`}>
+    <html lang="en" className={`light h-full antialiased ${inter.className}`} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/icon.png" type="image/png" />
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
