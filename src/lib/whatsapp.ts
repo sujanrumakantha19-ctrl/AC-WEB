@@ -18,10 +18,12 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
   const language = process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en_US";
   const firstName = name.trim().split(/\s+/)[0] || name;
 
-  // Parameter {{2}} in Meta template body must be a plain domain — no https://, no ?, no & characters.
-  // WhatsApp group invite links (chat.whatsapp.com/...?s=...) are banned in body text params by Meta.
-  // Always send the site domain as param 2. The group link is shared via WhatsApp separately by the admin.
-  const cleanLink = "vksautoservices.org";
+  // Meta bans ? and & in template body text parameters.
+  // Strip https:// and any query string from the group link before passing as {{2}}.
+  let cleanLink = "vksautoservices.org";
+  if (groupLink) {
+    cleanLink = groupLink.split("?")[0].replace(/^https?:\/\//i, "").trim() || "vksautoservices.org";
+  }
 
   const parameters: { type: string; text: string }[] = [
     { type: "text", text: firstName },
