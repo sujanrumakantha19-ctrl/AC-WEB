@@ -1,9 +1,68 @@
-import { sendWhatsAppWelcomeMessage } from "../lib/whatsapp.js";
+import fs from "fs";
+import path from "path";
 
-async function test() {
-  console.log("Testing ChatMitra Welcome Message for 9902262397...");
-  await sendWhatsAppWelcomeMessage("Test User", "9902262397", "Contact Admin");
-  console.log("Done calling sendWhatsAppWelcomeMessage");
+const envPath = path.join(process.cwd(), ".env.local");
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, "utf-8");
+  envContent.split("\n").forEach((line) => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      process.env[match[1].trim()] = match[2].trim();
+    }
+  });
 }
 
-test().catch(console.error);
+const CHATMITRA_API_URL = "https://backend.chatmitra.com/developer/api/send_message";
+
+function normalizeWhatsAppNumber(phone) {
+  const digits = phone.replace(/[^\d]/g, "");
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 11 && digits.startsWith("0")) return `91${digits.slice(1)}`;
+  return digits;
+}
+
+async function testNumber(phone) {
+  const token = process.env.CHATMITRA_API_TOKEN;
+  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_created_utility_v1_20260822210848";
+
+  console.log(`Using token ending in ...${token ? token.slice(-10) : 'NONE'}`);
+  console.log(`Using templateName: ${templateName}`);
+
+  const payload = {
+    recipient_mobile_number: normalizeWhatsAppNumber(phone),
+    messages: [
+      {
+        kind: "template",
+        template: {
+          name: templateName,
+          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en_US",
+          components: [
+            {
+              type: "body",
+              parameters: [
+                { type: "text", text: "TestUser" },
+                { type: "text", text: "Contact Admin" }
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  };
+
+  console.log(`Sending ChatMitra test to ${phone}...`);
+  const res = await fetch(CHATMITRA_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await res.text();
+  console.log("ChatMitra HTTP Status:", res.status);
+  console.log("ChatMitra Response Text:", text);
+}
+
+testNumber("9902262397").catch(console.error);
