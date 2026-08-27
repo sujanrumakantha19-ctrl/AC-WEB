@@ -51,8 +51,10 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
       body: JSON.stringify(payload),
     });
 
+    const text = await res.text();
+    console.log("[whatsapp] ChatMitra welcome response:", res.status, text);
+
     if (!res.ok) {
-      const text = await res.text();
       console.error("[whatsapp] ChatMitra send failed", res.status, text);
     }
   } catch (err) {
