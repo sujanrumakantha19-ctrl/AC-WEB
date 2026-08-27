@@ -78,16 +78,21 @@ export default function AboutUsPage() {
           <div className="space-y-3">
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">E-mail id</p>
-              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-                owner@vksautoserviceauctions.com
+              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+                owner@vksautosettleeauctions.com
               </a>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Call / WhatsApp</p>
-              <p className="text-on-surface-variant">
-                <a href="tel:9597177351" className="text-primary hover:underline">9597177351</a> /{" "}
-                <a href="tel:9003991351" className="text-primary hover:underline">9003991351</a>
-              </p>
+              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">WhatsApp Number</p>
+              <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">
+                95971 77351
+              </a>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Call Contact</p>
+              <a href="tel:9003991351" className="text-primary hover:underline font-bold">
+                9003991351
+              </a>
             </div>
           </div>
         </div>
@@ -105,13 +110,13 @@ export default function AboutUsPage() {
           <div className="space-y-3">
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Email</p>
-              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-                owner@vksautoserviceauctions.com
+              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+                owner@vksautosettleeauctions.com
               </a>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">WhatsApp Only</p>
-              <p className="text-on-surface-variant">9003991351</p>
+              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">WhatsApp Number</p>
+              <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">95971 77351</a>
             </div>
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Website</p>

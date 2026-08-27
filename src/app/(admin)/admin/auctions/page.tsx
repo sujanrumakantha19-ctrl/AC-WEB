@@ -119,7 +119,7 @@ export default function AdminAllAuctionsPage() {
       </div>
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex flex-nowrap bg-surface-container rounded-full p-1 whitespace-nowrap overflow-x-auto">
-          {(["ALL", "LIVE", "UPCOMING", "PARKING"] as const).map((s) => (
+          {(["ALL", "LIVE", "PARKING", "UPCOMING"] as const).map((s) => (
             <button key={s} onClick={() => setFilterStatus(s)} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${filterStatus === s ? "bg-white shadow-sm text-primary" : "text-on-surface-variant hover:text-primary"}`}>
               {s === "ALL" ? "All" : s === "PARKING" ? "Parking Sale" : s} <span className="opacity-60">({tabCounts[s]})</span>
             </button>
@@ -143,11 +143,21 @@ export default function AdminAllAuctionsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((a: SerializedAuction) => (
-            <div key={a._id || a.id} className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between">
+            <div
+              key={a._id || a.id}
+              className={`rounded-2xl overflow-hidden transition-all group flex flex-col justify-between border-2 ${
+                a.isParkingSale
+                  ? "bg-purple-50/80 border-purple-400 shadow-md shadow-purple-500/10 ring-2 ring-purple-400/20"
+                  : "bg-white border-transparent shadow-xs hover:shadow-md"
+              }`}
+            >
               <div className="relative h-48 w-full overflow-hidden bg-black/5">
                 <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none flex flex-col items-start gap-1.5">
-                  <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>{a.status}</Badge>
-                  {a.isParkingSale && <Badge variant="new">Parking Sale</Badge>}
+                  {a.isParkingSale ? (
+                    <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                  ) : (
+                    <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>{a.status}</Badge>
+                  )}
                 </div>
                 <ImageWithGallery src={a.image || ""} alt={a.title} images={a.images} imgClassName="group-hover:scale-105 transition-transform duration-500" />
               </div>
@@ -188,11 +198,21 @@ export default function AdminAllAuctionsPage() {
                     <p className="text-base font-extrabold text-primary leading-tight">{formatINR(a.currentOffer || a.startingOffer)}</p>
                     <p className="text-[10px] text-outline mt-0.5">{a.totalOffers} Offers Placed</p>
                   </div>
-                  <Link href={a.status === "LIVE" ? `/admin/auctions/live/${a._id || a.id}?from=/admin/auctions` : `/admin/auctions/${a._id || a.id}/details?from=/admin/auctions`}>
-                    <button className="px-4 py-2 bg-primary hover:bg-secondary text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95">
-                      Details
-                    </button>
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {a.status !== "ENDED" && (
+                      <Link href={`/admin/auctions/${a._id || a.id}/edit?from=/admin/auctions`}>
+                        <button className="px-3 py-2 bg-surface-container-low hover:bg-primary hover:text-white text-on-surface-variant font-bold text-xs rounded-xl transition-all active:scale-95 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">edit</span>
+                          Edit
+                        </button>
+                      </Link>
+                    )}
+                    <Link href={a.isParkingSale ? `/admin/auctions/${a._id || a.id}/details?from=/admin/auctions` : a.status === "LIVE" ? `/admin/auctions/live/${a._id || a.id}?from=/admin/auctions` : `/admin/auctions/${a._id || a.id}/details?from=/admin/auctions`}>
+                      <button className={`px-4 py-2 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 ${a.isParkingSale ? "bg-purple-700 hover:bg-purple-800" : "bg-primary hover:bg-secondary"}`}>
+                        {a.isParkingSale ? "Free" : "Details"}
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

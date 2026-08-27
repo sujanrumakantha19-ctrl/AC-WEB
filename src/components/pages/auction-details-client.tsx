@@ -49,8 +49,9 @@ export function AuctionDetailsClient({ id }: { id: string }) {
     );
   }
 
+  const isParkingSale = !!auction.isParkingSale;
   const isLive = auction.status === "LIVE";
-  const hasAccess = registered || !!auction.hasAccess;
+  const hasAccess = isParkingSale || registered || !!auction.hasAccess;
 
   const allImages: string[] = [...(auction.images || [])];
   if (allImages.length === 0 && auction.image) allImages.push(auction.image);
@@ -175,10 +176,12 @@ export function AuctionDetailsClient({ id }: { id: string }) {
                 <p className="text-[10px] text-on-surface-variant mb-0.5">Starting offer price</p>
                 <p className="text-xl font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] text-on-surface-variant mb-0.5">Registration fee</p>
-                <p className="text-sm font-bold text-on-surface">{formatINR(auction.registrationFee || 0)}</p>
-              </div>
+              {!isParkingSale && (
+                <div className="text-right">
+                  <p className="text-[10px] text-on-surface-variant mb-0.5">Registration fee</p>
+                  <p className="text-sm font-bold text-on-surface">{formatINR(auction.registrationFee || 0)}</p>
+                </div>
+              )}
             </div>
 
             {hasAccess ? (

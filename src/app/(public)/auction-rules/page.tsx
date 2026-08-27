@@ -7,7 +7,7 @@ const HOW_IT_WORKS = [
   },
   {
     title: "Pay the registration fee",
-    body: "Pay the Registration Fee (₹499 + 18% GST, Total ₹588.82 per auction, as displayed on the listing) through the online payment gateway to participate in that auction.",
+    body: "Pay the Registration Fee of ₹588 (₹499 base + 18% GST) through the online payment gateway to participate in that auction.",
   },
   {
     title: "Place offers across rounds",
@@ -31,7 +31,7 @@ const OFFER_RULES = [
 const FEES = [
   {
     title: "Registration Fee",
-    body: "₹499 + 18% GST (Total ₹588.82 per auction, as displayed on the listing). Paid once per auction to participate. Refundable only as described in the Refund Policy.",
+    body: "₹588 per auction (₹499 base fee + ₹89 18% GST). Paid once per auction to participate. Only the ₹499 base fee is refundable as per the Refund Policy.",
   },
   {
     title: "Offer Access Fee",
@@ -113,13 +113,17 @@ export default function AuctionRulesPage() {
           <p>98/13, Kodangi Thoppu Street, Thirupparankundram, Madurai - 625005.</p>
           <p className="mt-2">
             E-mail:{" "}
-            <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-              owner@vksautoserviceauctions.com
+            <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+              owner@vksautosettleeauctions.com
             </a>
           </p>
           <p>
-            Call / WhatsApp:{" "}
-            <a href="tel:9003991351" className="text-primary hover:underline">9003991351</a>
+            Call Contact:{" "}
+            <a href="tel:9003991351" className="text-primary hover:underline font-bold">9003991351</a>
+          </p>
+          <p>
+            WhatsApp Number:{" "}
+            <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">95971 77351</a>
           </p>
         </div>
       </section>

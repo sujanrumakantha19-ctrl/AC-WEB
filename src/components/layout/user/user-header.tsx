@@ -50,15 +50,13 @@ export function UserHeader() {
       {/* User Actions */}
       <div className="flex items-center gap-3 ml-auto">
         {/* Notifications Icon */}
-        <Link href="/user/notifications">
-          <div className="relative cursor-pointer hover:bg-surface-container p-2 rounded-full transition-colors">
-            <span className="material-symbols-outlined text-on-surface-variant text-lg">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-white" />
-          </div>
+        <Link href="/user/notifications" title="Notifications" className="relative cursor-pointer hover:bg-surface-container p-2 rounded-full transition-colors flex items-center justify-center">
+          <span className="material-symbols-outlined text-on-surface-variant text-lg">notifications</span>
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full border-2 border-white" />
         </Link>
 
         {/* User Profile Badge */}
-        <Link href="/user/profile" className="flex items-center gap-2.5 cursor-pointer group pl-2 border-l border-outline-variant/30">
+        <Link href="/user/profile" title="My Profile" className="flex items-center gap-2.5 cursor-pointer group pl-2 border-l border-outline-variant/30 hover:opacity-80 transition-opacity">
           <div className="text-right hidden sm:block">
             {isLoading ? (
               <div className="space-y-1.5">

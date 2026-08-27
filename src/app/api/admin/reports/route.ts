@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
     const netRetainedRevenue = totalRegDepositsCollected - totalRefundsIssued;
 
-    // Unique active bidders in range
+    // Unique active buyers in range
     const uniqueBiddersSet = new Set(offers.map((o: any) => String(o.buyer?._id || o.buyer)));
 
     // Top Selling Lots

@@ -674,7 +674,7 @@ export default function AdminUsersPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] border-t border-outline-variant/20 pt-2 text-on-surface-variant font-medium">
-                          <span>Reg. Fee: {formatINR(pa.registrationFee)}</span>
+                          <span>Reg. Fee: {pa.isParkingSale ? "Free" : formatINR(pa.registrationFee)}</span>
                           <span>Highest Offer: {formatINR(pa.highestUserOffer)}</span>
                         </div>
                       </div>

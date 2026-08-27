@@ -132,14 +132,24 @@ export default function AdminLiveControlRoomPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 min-w-0">
-        <Link href="/admin/auctions" className="flex items-center gap-1 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors shrink-0">
-          <span className="material-symbols-outlined text-base">arrow_back</span>
-          Back
-        </Link>
-        <h1 className="text-lg font-extrabold text-on-surface truncate">{auction.title}</h1>
-        {auction.status === "ENDED" && (
-          <span className="text-xs text-error font-bold shrink-0">🏁 ENDED</span>
+      <div className="flex items-center justify-between gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/admin/auctions" className="flex items-center gap-1 text-xs font-bold text-on-surface-variant hover:text-primary transition-colors shrink-0">
+            <span className="material-symbols-outlined text-base">arrow_back</span>
+            Back
+          </Link>
+          <h1 className="text-lg font-extrabold text-on-surface truncate">{auction.title}</h1>
+          {auction.status === "ENDED" && (
+            <span className="text-xs text-error font-bold shrink-0">🏁 ENDED</span>
+          )}
+        </div>
+        {auction.status !== "ENDED" && (
+          <Link href={`/admin/auctions/${id}/edit?from=/admin/auctions/live/${id}`}>
+            <button className="px-3.5 py-1.5 bg-white border border-outline-variant/40 hover:border-primary hover:text-primary text-on-surface-variant font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 shrink-0">
+              <span className="material-symbols-outlined text-sm">edit</span>
+              Edit Auction
+            </button>
+          </Link>
         )}
       </div>
 
@@ -205,7 +215,7 @@ export default function AdminLiveControlRoomPage() {
               </div>
               <div>
                 <p className="text-xs font-bold text-outline uppercase tracking-wider">Reg. Fee</p>
-                <p className="text-base font-bold text-on-surface">{formatINR(auction.registrationFee || 0)}</p>
+                <p className="text-base font-bold text-on-surface">{auction.isParkingSale ? "N/A (Free)" : formatINR(auction.registrationFee || 0)}</p>
               </div>
               <div
                 onClick={() => setParticipantsPopupOpen(true)}

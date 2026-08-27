@@ -113,24 +113,16 @@ export async function sendWelcomeMessageToUser(userId: string) {
   let groupLink = "";
   if (user.whatsAppGroup) {
     const group = await WhatsAppGroup.findById(user.whatsAppGroup).exec();
-    if (group && group.status === "active" && group.link) {
+    if (group && group.status === "active") {
       groupLink = group.link;
     }
   }
 
-  if (!groupLink) {
-    const anyActiveGroup = await WhatsAppGroup.findOne({ status: "active" }).sort({ members: 1 }).exec();
-    if (anyActiveGroup && anyActiveGroup.link) {
-      groupLink = anyActiveGroup.link;
-    }
-  }
-
-  const finalLink = groupLink || "Contact Admin";
-  await sendWhatsAppWelcomeMessage(user.name, user.phone, finalLink);
+  await sendWhatsAppWelcomeMessage(user.name, user.phone, groupLink);
   user.whatsAppGroupLinkSent = true;
   await user.save();
 
-  return { sent: true, link: finalLink };
+  return { sent: true, link: groupLink };
 }
 
 /**

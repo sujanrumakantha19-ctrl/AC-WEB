@@ -75,11 +75,11 @@ export default function LegalPrivacyPage() {
           <ul className="space-y-1.5 text-sm text-on-surface-variant leading-relaxed">
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-              <span>A Registration Fee of ₹599 per auction is collected to participate in that auction.</span>
+              <span>A Registration Fee of ₹588 (₹499 base + ₹89 18% GST) is collected to participate in an auction.</span>
             </li>
             <li className="flex gap-2">
               <span className="mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-              <span>This fee is refundable only in the circumstances described in the Refund Policy.</span>
+              <span>Only the ₹499 base fee is refundable as described in the Refund Policy.</span>
             </li>
           </ul>
         </section>
@@ -116,12 +116,15 @@ export default function LegalPrivacyPage() {
             <p>Madurai - 625005.</p>
             <p className="mt-2">
               E-mail id:{" "}
-              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-                owner@vksautoserviceauctions.com
+              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+                owner@vksautosettleeauctions.com
               </a>
             </p>
             <p>
-              WhatsApp: <a href="tel:9003991351" className="text-primary hover:underline">9003991351</a>
+              Call Contact: <a href="tel:9003991351" className="text-primary hover:underline font-bold">9003991351</a>
+            </p>
+            <p>
+              WhatsApp Number: <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">95971 77351</a>
             </p>
           </div>
         </section>

@@ -25,14 +25,14 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("en-IN");
  * Computes the refund status for every participant of an ENDED auction.
  *
  * With a winner (normal end):
- *  1. Only the last round's bidders participate in the evaluation.
+ *  1. Only the last round's offer submitters participate in the evaluation.
  *  2. The winner is excluded (winners do not get a refund).
- *  3. Only the top 50% of bidders (by last-round offer amount, desc) are
+ *  3. Only the top 50% of offer submitters (by last-round offer amount, desc) are
  *     considered eligible for a refund.
- *  4. Within that top 50%, a refund is issued only if the bidder's last-round
+ *  4. Within that top 50%, a refund is issued only if the customer's last-round
  *     offer is at least 1% of the winner's final offer price.
  *
- * Without a winner (cancelled / no bids in the final round):
+ * Without a winner (cancelled / no offers in the final round):
  *  every paid participant is eligible for a full registration-fee refund.
  */
 export async function computeRefundStatus(
@@ -223,7 +223,9 @@ export async function processAuctionRefunds(auctionId: string): Promise<{
       continue;
     }
 
-    const refund = await refundRazorpayPayment(payment.paymentId, payment.amount * 100, {
+    // Only the ₹499 base registration fee is refundable (18% GST of ₹89 is non-refundable)
+    const REFUND_BASE_AMOUNT = 499;
+    const refund = await refundRazorpayPayment(payment.paymentId, REFUND_BASE_AMOUNT * 100, {
       auctionId: auction._id.toString(),
       lotNumber: auction.lotNumber || "",
       userId: s.buyerId,
@@ -262,14 +264,14 @@ export async function processAuctionRefunds(auctionId: string): Promise<{
       user: s.buyerId,
       title: "Registration fee refund initiated",
       message: auction.winner
-        ? `Your registration deposit of ₹${fmt(payment.amount)} for ${auction.title} refund is being processed. It will be credited to your payment method once the refund is completed. (Final offer ₹${fmt(s.lastRoundOffer)})`
-        : `Your registration deposit of ₹${fmt(payment.amount)} for ${auction.title} refund is being processed. It will be credited to your payment method once the refund is completed.`,
+        ? `Your registration deposit refund of ₹499 (excluding ₹89 GST) for ${auction.title} is being processed. It will be credited to your payment method once completed. (Final offer ₹${fmt(s.lastRoundOffer)})`
+        : `Your registration deposit refund of ₹499 (excluding ₹89 GST) for ${auction.title} is being processed. It will be credited to your payment method once completed.`,
       type: "system",
       relatedAuction: auction._id,
     });
 
     refunded += 1;
-    refundedAmount += payment.amount;
+    refundedAmount += REFUND_BASE_AMOUNT;
   }
 
   const allSucceeded = failed === 0;

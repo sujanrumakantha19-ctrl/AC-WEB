@@ -13,11 +13,11 @@ import { useGetMeQuery } from "@/services/auth-api";
 
 const PAGE_SIZE = 12;
 
-type Tab = "live" | "upcoming";
+type Tab = "all" | "live" | "parking" | "upcoming";
 
 export default function UserAuctionsPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>("live");
+  const [tab, setTab] = useState<Tab>("all");
   const [items, setItems] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -28,10 +28,13 @@ export default function UserAuctionsPage() {
   const [getAuctions] = useLazyGetAuctionsQuery();
   const { data: liveCountData } = useGetAuctionsQuery({ status: "LIVE", limit: 1 });
   const { data: upcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", limit: 1 });
+  const { data: parkingCountData } = useGetAuctionsQuery({ parkingSale: true, limit: 1 });
   const { data: meData } = useGetMeQuery();
 
   const tabCounts: Record<Tab, number> = {
+    all: (liveCountData?.total || 0) + (upcomingCountData?.total || 0),
     live: liveCountData?.total || 0,
+    parking: parkingCountData?.total || 0,
     upcoming: upcomingCountData?.total || 0,
   };
 
@@ -41,13 +44,19 @@ export default function UserAuctionsPage() {
   );
 
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
-    if (t === "upcoming" || t === "live") setTab(t);
+    const t = (new URLSearchParams(window.location.search).get("tab") || "").toLowerCase();
+    if (t === "all" || t === "live" || t === "parking" || t === "upcoming") setTab(t as Tab);
   }, []);
 
   const loadPage = useCallback(
     async (t: Tab, p: number) => {
-      const res = await getAuctions({ status: t.toUpperCase(), limit: PAGE_SIZE, page: p });
+      const res = await getAuctions(
+        t === "parking"
+          ? { parkingSale: true, limit: PAGE_SIZE, page: p }
+          : t === "all"
+          ? { limit: PAGE_SIZE, page: p }
+          : { status: t.toUpperCase(), limit: PAGE_SIZE, page: p }
+      );
       return res.data?.auctions || [];
     },
     [getAuctions]
@@ -113,7 +122,11 @@ export default function UserAuctionsPage() {
       <div
         key={String(id)}
         onClick={() => router.push(`/user/auctions/${id}`)}
-        className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between cursor-pointer"
+        className={`rounded-2xl overflow-hidden transition-all group flex flex-col justify-between cursor-pointer border-2 ${
+          a.isParkingSale
+            ? "bg-purple-50/80 border-purple-400 shadow-md shadow-purple-500/10 ring-2 ring-purple-400/20"
+            : "bg-white border-transparent shadow-xs hover:shadow-md"
+        }`}
       >
         <div className="relative h-44 w-full overflow-hidden bg-black/5">
           <ImageWithGallery
@@ -122,10 +135,14 @@ export default function UserAuctionsPage() {
             images={a.images}
             imgClassName="group-hover:scale-105 transition-transform duration-500"
           />
-          <div className="absolute top-2.5 left-2.5 z-10">
-            <Badge variant={isLive ? "live" : "warning"} pulse={isLive}>
-              {isLive ? "LIVE" : "UPCOMING"}
-            </Badge>
+          <div className="absolute top-2.5 left-2.5 z-10 flex gap-1 items-center">
+            {a.isParkingSale ? (
+              <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+            ) : (
+              <Badge variant={isLive ? "live" : "warning"} pulse={isLive}>
+                {isLive ? "LIVE" : "UPCOMING"}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -161,7 +178,7 @@ export default function UserAuctionsPage() {
             {a.description && (
               <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed mt-2">{a.description}</p>
             )}
-            {isLive && (
+            {!a.isParkingSale && isLive && (
               <RoundCountdown
                 roundTimes={a.roundTimes}
                 currentRound={a.currentRound}
@@ -172,7 +189,20 @@ export default function UserAuctionsPage() {
           </div>
 
           <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/30">
-            {isLive ? (
+            {a.isParkingSale ? (
+              <>
+                <div>
+                  <p className="text-[10px] text-on-surface-variant mb-0.5">Highest Quote</p>
+                  <p className="text-sm font-extrabold text-purple-700">{formatINR(a.currentOffer || a.startingOffer)}</p>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); router.push(a.status === "LIVE" ? `/user/live/${id}` : `/user/auctions/${id}`); }}
+                  className="bg-purple-700 text-white text-xs px-5 py-1.5 rounded-lg font-bold hover:bg-purple-800 transition-colors shadow-xs"
+                >
+                  Free
+                </button>
+              </>
+            ) : isLive ? (
               <>
                 <div>
                   <p className="text-[10px] text-on-surface-variant mb-0.5">Starting offer price</p>
@@ -231,11 +261,11 @@ export default function UserAuctionsPage() {
         <div>
           <h1 className="text-2xl font-extrabold text-primary tracking-tight">Auctions</h1>
           <p className="text-sm text-on-surface-variant mt-1">
-            Live and upcoming automotive auctions. Browse curated premium vehicles and place your offers.
+            Live, upcoming, and parking sale automotive auctions. Browse curated premium vehicles and place your offers.
           </p>
         </div>
-        <div className="flex gap-1.5 bg-surface-container-low p-1 rounded-xl w-fit">
-          {(["live", "upcoming"] as Tab[]).map((t) => (
+        <div className="flex gap-1.5 bg-surface-container-low p-1 rounded-xl w-fit flex-wrap">
+          {(["all", "live", "parking", "upcoming"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
@@ -245,7 +275,8 @@ export default function UserAuctionsPage() {
                 tab === t ? "bg-primary text-white shadow-xs" : "text-on-surface-variant hover:text-on-surface",
               ].join(" ")}
             >
-              {t === "live" ? "Live" : "Upcoming"} <span className="opacity-60">({tabCounts[t]})</span>
+              {t === "all" ? "All" : t === "live" ? "LIVE" : t === "parking" ? "Parking Sale" : "Upcoming"}{" "}
+              <span className="opacity-60">({tabCounts[t]})</span>
             </button>
           ))}
         </div>

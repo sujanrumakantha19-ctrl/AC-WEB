@@ -71,14 +71,23 @@ export const POST = route(async (request: NextRequest) => {
     );
   }
 
-  const basePrice = isParkingSale
-    ? auction.currentOffer || auction.startingOffer
-    : roundIdx > 0
-      ? auction.roundStates[roundIdx - 1]?.highestOffer || auction.startingOffer
-      : auction.startingOffer;
+  const latestTopOffer = (await Offer.findOne({ auction: auctionId }).sort({ amount: -1 }).lean()) as any;
+  const topOfferAmount = latestTopOffer ? Number(latestTopOffer.amount) : 0;
 
-  if (offerAmount <= basePrice) {
-    return badRequest(`Offer must be higher than the base price ₹${basePrice.toLocaleString("en-IN")}`);
+  const currentHighest = Math.max(
+    topOfferAmount,
+    auction.currentOffer || 0,
+    auction.startingOffer || 0,
+    auction.roundStates?.[roundIdx]?.highestOffer || 0,
+    roundIdx > 0 ? (auction.roundStates?.[roundIdx - 1]?.highestOffer || 0) : 0
+  );
+
+  if (offerAmount <= currentHighest) {
+    return badRequest(
+      isParkingSale
+        ? `Quote must be higher than the current highest quote of ₹${currentHighest.toLocaleString("en-IN")}`
+        : `Offer must be higher than the current highest offer of ₹${currentHighest.toLocaleString("en-IN")}`
+    );
   }
 
   if (!isParkingSale) {

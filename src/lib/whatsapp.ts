@@ -14,14 +14,13 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
     return;
   }
 
-  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_created_utility_v1_20260822210848";
+  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_welcome_v1";
   const firstName = name.trim().split(/\s+/)[0] || name;
-  const effectiveGroupLink = groupLink && groupLink.trim() ? groupLink.trim() : "Contact Admin";
 
-  const parameters: { type: string; text: string }[] = [
-    { type: "text", text: firstName },
-    { type: "text", text: effectiveGroupLink },
-  ];
+  const parameters: { type: string; text: string }[] = [{ type: "text", text: firstName }];
+  if (groupLink) {
+    parameters.push({ type: "text", text: groupLink });
+  }
 
   const payload = {
     recipient_mobile_number: normalizeWhatsAppNumber(phone),
@@ -30,7 +29,7 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en_US",
+          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en",
           components: [
             {
               type: "body",
@@ -54,9 +53,7 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
 
     if (!res.ok) {
       const text = await res.text();
-      console.error("[whatsapp] ChatMitra welcome send failed", res.status, text);
-    } else {
-      console.log(`[whatsapp] Welcome message successfully dispatched to ${phone}`);
+      console.error("[whatsapp] ChatMitra send failed", res.status, text);
     }
   } catch (err) {
     console.error("[whatsapp] ChatMitra send error", err);
@@ -76,7 +73,7 @@ export async function sendWhatsAppAuctionReminderMessage(
     return;
   }
 
-  const templateName = process.env.CHATMITRA_REMINDER_TEMPLATE_NAME || "auction_reminder_utility_v1_20260822205437";
+  const templateName = process.env.CHATMITRA_REMINDER_TEMPLATE_NAME || "auction_reminder_v1";
   const firstName = name.trim().split(/\s+/)[0] || name;
 
   const parameters = [
@@ -93,7 +90,7 @@ export async function sendWhatsAppAuctionReminderMessage(
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en_US",
+          language: process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en",
           components: [
             {
               type: "body",

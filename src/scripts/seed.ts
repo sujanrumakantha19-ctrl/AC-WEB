@@ -26,8 +26,8 @@ async function run() {
     // Create Admin User
     await User.create({
       name: "VKS Admin",
-      email: "shenbagamoorthy031@gmail.com",
-      password: "Kali@4921",
+      email: "admin@vks.com",
+      password: "Admin@1234",
       role: "admin",
       cusId: "ADM-1001",
       phone: "919000000000",

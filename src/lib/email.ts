@@ -53,7 +53,7 @@ export async function sendResetOtpEmail({
   `;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
     to,
     subject: `Your Password Reset Verification Code: ${otp} - VKS Autoservices`,
     html: htmlContent,
@@ -74,7 +74,7 @@ export async function sendPaymentInvoiceEmail({
   fileName: string;
 }) {
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
     to,
     subject: `Your Payment Receipt ${fileName.replace(/[^\d]/g, "") ? `(${fileName.replace(/[^\d]/g, "")})` : ""} - VKS Autoservices`,
     html: `
@@ -85,9 +85,10 @@ export async function sendPaymentInvoiceEmail({
         </div>
 
         <div style="background-color: #ffffff; padding: 32px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
-          <h3 style="color: #191c1e; font-size: 18px; margin-top: 0; font-weight: 700;">Payment Received 🎉</h3>
-          <p style="color: #42474f; font-size: 14px; line-height: 1.6;">Thank you for your payment! Your payment receipt (invoice) is attached to this email as a PDF.</p>
-          <p style="color: #727780; font-size: 12px; line-height: 1.5;">Please save this receipt for your records. Refunds are governed by the platform's Refund Policy.</p>
+          <h3 style="color: #191c1e; font-size: 20px; margin-top: 0; font-weight: 800;">Payment Invoice Attached 📄</h3>
+          <p style="color: #42474f; font-size: 14px; line-height: 1.6;">Thank you for your payment. Please find your official payment invoice attached to this email.</p>
+
+          <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">If you have any questions or require support, reach out to us at owner@vksautosettleeauctions.com, WhatsApp us at 95971 77351, or call us at 9003991351.</p>
         </div>
 
         <div style="text-align: center; margin-top: 24px; color: #727780; font-size: 11px;">
@@ -106,28 +107,25 @@ export async function sendPaymentInvoiceEmail({
 }
 
 /**
- * Emails a congratulations message to the winner of an auction / parking sale
- * immediately after it ends. Includes the basic details of the win.
+ * Emails a congratulations notice to the winner of an auction or parking sale.
  */
 export async function sendWinnerCongratulationsEmail({
   to,
   customerName,
   auctionName,
-  itemDetails,
   winningAmount,
   endedAt,
-  isParkingSale,
+  saleType = "Auction",
+  itemDetails,
 }: {
   to: string;
   customerName: string;
   auctionName: string;
-  itemDetails?: string;
   winningAmount: string;
   endedAt: string;
-  isParkingSale?: boolean;
+  saleType?: string;
+  itemDetails?: string;
 }) {
-  const saleType = isParkingSale ? "Parking Sale" : "Auction";
-
   const detailRow = (label: string, value: string) => `
     <tr>
       <td style="padding: 10px 0; color: #727780; font-size: 12px; font-weight: 600; width: 40%;">${label}</td>
@@ -143,8 +141,8 @@ export async function sendWinnerCongratulationsEmail({
       </div>
 
       <div style="background-color: #ffffff; padding: 32px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
-        <h3 style="color: #191c1e; font-size: 20px; margin-top: 0; font-weight: 800;">Congratulations, ${customerName}! 🎉</h3>
-        <p style="color: #42474f; font-size: 14px; line-height: 1.6;">You have won the ${saleType}: <strong>${auctionName}</strong>. We are thrilled to have you as the winning customer.</p>
+        <h3 style="color: #191c1e; font-size: 20px; margin-top: 0; font-weight: 800;">Congratulations! You Won 🎉</h3>
+        <p style="color: #42474f; font-size: 14px; line-height: 1.6;">Hello <strong>${customerName}</strong>, your offer was confirmed as the winning offer for <strong>${auctionName}</strong>.</p>
 
         <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border-top: 1px solid #eef1f5; border-bottom: 1px solid #eef1f5;">
           ${detailRow("Customer Name", customerName)}
@@ -154,7 +152,7 @@ export async function sendWinnerCongratulationsEmail({
           ${detailRow("Ended On", endedAt)}
         </table>
 
-        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Our team will reach out to you shortly with the next steps for completing your purchase. For any queries, contact us at owner@vksautoserviceauctions.com or call/WhatsApp 9003991351.</p>
+        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Our team will reach out to you shortly with the next steps for completing your purchase. For any queries, contact us at owner@vksautosettleeauctions.com, WhatsApp 95971 77351, or call 9003991351.</p>
       </div>
 
       <div style="text-align: center; margin-top: 24px; color: #727780; font-size: 11px;">
@@ -164,9 +162,71 @@ export async function sendWinnerCongratulationsEmail({
   `;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
     to,
     subject: `Congratulations! You Won the ${saleType} - ${auctionName} | VKS Autoservices`,
+    html: htmlContent,
+  });
+}
+
+/**
+ * Emails a refund confirmation notice to a customer when Razorpay confirms
+ * their refund has been successfully credited to their payment method.
+ */
+export async function sendRefundConfirmationEmail({
+  to,
+  customerName,
+  auctionTitle,
+  amount,
+  refundId,
+  date,
+}: {
+  to: string;
+  customerName: string;
+  auctionTitle: string;
+  amount: string;
+  refundId?: string;
+  date?: string;
+}) {
+  const detailRow = (label: string, value: string) => `
+    <tr>
+      <td style="padding: 10px 0; color: #727780; font-size: 12px; font-weight: 600; width: 40%;">${label}</td>
+      <td style="padding: 10px 0; color: #191c1e; font-size: 13px; font-weight: 700;">${value}</td>
+    </tr>
+  `;
+
+  const htmlContent = `
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background-color: #f7f9fc; border-radius: 16px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h2 style="color: #00355f; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">VKS AUTOSERVICES</h2>
+        <p style="color: #42474f; font-size: 12px; margin-top: 4px; font-weight: 600;">Premium Automotive Auction Platform</p>
+      </div>
+
+      <div style="background-color: #ffffff; padding: 32px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);">
+        <h3 style="color: #191c1e; font-size: 20px; margin-top: 0; font-weight: 800;">Refund Credited Successfully 💸</h3>
+        <p style="color: #42474f; font-size: 14px; line-height: 1.6;">Hello <strong>${customerName}</strong>, your deposit refund for <strong>${auctionTitle}</strong> has been successfully credited back to your original payment method.</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border-top: 1px solid #eef1f5; border-bottom: 1px solid #eef1f5;">
+          ${detailRow("Customer Name", customerName)}
+          ${detailRow("Auction / Sale", auctionTitle)}
+          ${detailRow("Refunded Amount", amount)}
+          ${refundId ? detailRow("Refund Reference", refundId) : ""}
+          ${date ? detailRow("Confirmed Date", date) : ""}
+        </table>
+
+        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Depending on your bank or card issuer, the credited amount will reflect on your statement within 1–3 business days. If you have any questions, reach out to us at owner@vksautosettleeauctions.com, WhatsApp 95971 77351, or call 9003991351.</p>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px; color: #727780; font-size: 11px;">
+        &copy; ${new Date().getFullYear()} VKS Autoservices. All rights reserved.
+      </div>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
+    to,
+    subject: `Refund Confirmation: Deposit for ${auctionTitle} Credited - VKS Autoservices`,
     html: htmlContent,
   });
 }

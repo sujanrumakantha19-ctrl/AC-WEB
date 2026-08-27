@@ -72,9 +72,21 @@ export async function sendInvoiceForPayment(
 
   await dbConnect();
 
-  const record = (await Payment.findById(payment._id).lean()) as unknown as InvoicePayment | null;
+  const record = (await Payment.findOne({
+    _id: payment._id,
+    status: "PAID",
+    invoiceSentAt: { $exists: false },
+  }).lean()) as unknown as InvoicePayment | null;
+
   if (!record) return false;
-  if (record.invoiceSentAt) return false;
+
+  // Claim invoice sending atomically to prevent duplicate emails under concurrent calls
+  const claim = await Payment.updateOne(
+    { _id: record._id, invoiceSentAt: { $exists: false } },
+    { $set: { invoiceSentAt: new Date(), updatedAt: new Date() } }
+  );
+
+  if (claim.modifiedCount === 0) return false;
 
   const auction = (await Auction.findById(record.auction)
     .select("title lotNumber location")
@@ -82,6 +94,7 @@ export async function sendInvoiceForPayment(
   const user = (await User.findById(record.user)
     .select("name cusId phone email addressLine1 addressLine2 city state country pincode")
     .lean()) as unknown as InvoiceUser | null;
+
   if (!user?.email) {
     console.warn("[invoice-email] no registered email; skipping invoice for", record._id);
     return false;
@@ -125,9 +138,12 @@ export async function sendInvoiceForPayment(
       pdfBuffer,
       fileName: `${invoiceNo}.pdf`,
     });
+    return true;
   } catch (err) {
     console.error("[invoice-email] failed to email invoice for", record._id, err);
+    // Unset invoiceSentAt on failure so it can be retried safely later
     try {
+      await Payment.updateOne({ _id: record._id }, { $unset: { invoiceSentAt: 1 } });
       await notifyAdmins(
         "Invoice email failed",
         `Could not email the payment receipt (${invoiceNo}) to ${user.name} (${user.cusId || String(user._id)}) for auction "${auction?.title || "N/A"}". Reason: ${err instanceof Error ? err.message : "unknown error"}`,
@@ -138,10 +154,4 @@ export async function sendInvoiceForPayment(
     }
     return false;
   }
-
-  await Payment.updateOne(
-    { _id: record._id },
-    { $set: { invoiceSentAt: new Date(), updatedAt: new Date() } }
-  );
-  return true;
 }

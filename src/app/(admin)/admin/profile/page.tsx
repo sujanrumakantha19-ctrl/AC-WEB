@@ -9,8 +9,7 @@ import { useGetMeQuery, useUpdateMeMutation, useChangePasswordMutation } from "@
 import { useUploadImageMutation } from "@/services/upload-api";
 import { errorMessage } from "@/lib/helpers";
 import { compressImage } from "@/lib/compress-image";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { toggleTheme } from "@/redux/slices/themeSlice";
+import { useAppDispatch } from "@/redux/hooks";
 
 export default function AdminProfilePage() {
   const [name, setName] = useState("");
@@ -40,7 +39,6 @@ export default function AdminProfilePage() {
   const [passwordSaving, setPasswordSaving] = useState(false);
 
   const dispatch = useAppDispatch();
-  const themeMode = useAppSelector((s) => s.theme.mode);
 
   const { data: meData, isLoading } = useGetMeQuery();
   const [updateMe] = useUpdateMeMutation();
@@ -326,32 +324,6 @@ export default function AdminProfilePage() {
               </button>
             </div>
           </form>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl overflow-hidden shadow-xs">
-        <div className="p-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <span className="material-symbols-outlined text-xl">dark_mode</span>
-            </div>
-            <div>
-              <h3 className="text-base font-extrabold text-on-surface">Appearance</h3>
-              <p className="text-xs text-on-surface-variant">Switch between light and dark mode</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => dispatch(toggleTheme())}
-            role="switch"
-            aria-checked={themeMode === "dark"}
-            aria-label="Toggle dark mode"
-            className={`w-12 h-7 rounded-full flex items-center px-1 transition-colors ${
-              themeMode === "dark" ? "bg-primary justify-end" : "bg-outline-variant justify-start"
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-white shadow-md transition-all" />
-          </button>
         </div>
       </div>
 

@@ -53,18 +53,26 @@ export function AppFooter() {
           <h4 className="text-label-md font-label-md font-bold uppercase tracking-wider text-on-primary-container">
             Need Assistance?
           </h4>
-          <p className="text-body-md text-white/80">24/7 Offering Hotline:</p>
-          <p className="text-headline-md font-bold text-on-primary-container">+91 90039 91351</p>
-          <p className="text-label-sm text-white/60">support@vksautoserviceauctions.com</p>
+          <p className="text-body-md text-white/80">Contact Hotline:</p>
+          <p className="text-headline-md font-bold text-on-primary-container">
+            <a href="tel:9003991351" className="hover:underline">+91 90039 91351</a>
+          </p>
+          <p className="text-body-xs text-white/80">
+            WhatsApp: <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="hover:underline font-bold text-on-primary-container">+91 95971 77351</a>
+          </p>
+          <p className="text-label-sm text-white/60">
+            <a href="mailto:owner@vksautosettleeauctions.com" className="hover:underline">owner@vksautosettleeauctions.com</a>
+          </p>
         </div>
       </div>
 
       <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop mt-unit-xl pt-unit-md border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-label-sm text-white/50 gap-4">
         <p>© {new Date().getFullYear()} VKS Autoservices. All rights reserved.</p>
-        <div className="flex gap-6">
-          <span className="hover:underline cursor-pointer">Privacy Policy</span>
+        <div className="flex flex-wrap gap-4 md:gap-6">
+          <Link href="/parking-sale-policy" className="hover:underline cursor-pointer">Parking Sale Policy</Link>
+          <Link href="/legal-privacy" className="hover:underline cursor-pointer">Privacy Policy</Link>
           <Link href="/terms" className="hover:underline cursor-pointer">Terms of Service</Link>
-          <span className="hover:underline cursor-pointer">KYC Guidelines</span>
+          <Link href="/refund-policy" className="hover:underline cursor-pointer">Refund Policy</Link>
         </div>
       </div>
     </footer>

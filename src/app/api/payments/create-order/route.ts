@@ -17,7 +17,7 @@ const getRazorpayKeys = () => {
   return { keyId, keySecret };
 };
 
-const DEFAULT_FEE = 499;
+const DEFAULT_FEE = 500;
 
 /** How many minutes before we consider an unattempted order abandoned */
 const ABANDON_MINUTES = 15;
@@ -192,6 +192,11 @@ export const POST = route(async (request: NextRequest) => {
   const user = await User.findById(auth.userId);
   if (!user) return notFound("User not found");
 
+  // ── Parking Sale has no registration fee ──
+  if (auction.isParkingSale) {
+    return ok({ success: true, alreadyPaid: true, amount: 0 });
+  }
+
   // ── Already paid? ──
   const alreadyPaid = (user.paidAccessAuctions || []).some(
     (id: mongoose.Types.ObjectId) => id.toString() === auction._id.toString()
@@ -245,21 +250,19 @@ export const POST = route(async (request: NextRequest) => {
     // fall through to create a brand new order below.
   }
 
-  // ── Calculate fee (Base + 18% GST) ──
+  // ── Calculate fee ──
   const feeSetting = (await Setting.findOne({
     key: { $in: ["registrationFee", "registration-fee"] },
   })
     .select("value")
     .lean()) as any;
-  const settingFee = feeSetting?.value ? parseFloat(feeSetting.value) : NaN;
-  const baseFee =
+  const settingFee = feeSetting?.value ? parseInt(feeSetting.value) : NaN;
+  const amount =
     auction.registrationFee ||
     (!isNaN(settingFee) && settingFee > 0 ? settingFee : DEFAULT_FEE);
-  const gstAmount = +(baseFee * 0.18).toFixed(2);
-  const totalPayable = +(baseFee + gstAmount).toFixed(2);
 
   if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-    return ok({ success: false, error: "Razorpay is not configured", amount: totalPayable, baseFee, gstAmount });
+    return ok({ success: false, error: "Razorpay is not configured", amount });
   }
 
   // ── Create new Razorpay order ──
@@ -279,7 +282,7 @@ export const POST = route(async (request: NextRequest) => {
       Authorization: authHeader,
     },
     body: JSON.stringify({
-      amount: Math.round(totalPayable * 100),
+      amount: Math.round(amount * 100),
       currency: "INR",
       receipt,
       notes: {
@@ -287,8 +290,6 @@ export const POST = route(async (request: NextRequest) => {
         lotNumber: auction.lotNumber || "",
         userId: user._id.toString(),
         cusId: user.cusId || "",
-        baseFee: String(baseFee),
-        gstAmount: String(gstAmount),
       },
     }),
   });
@@ -299,7 +300,7 @@ export const POST = route(async (request: NextRequest) => {
     return ok({
       success: false,
       error: "Razorpay order creation failed",
-      amount: totalPayable,
+      amount,
     });
   }
 
@@ -310,7 +311,7 @@ export const POST = route(async (request: NextRequest) => {
       user: user._id,
       auction: auction._id,
       orderId: order.id,
-      amount: totalPayable,
+      amount,
       currency: order.currency || "INR",
       receipt: order.receipt,
       status: "PENDING",
@@ -322,9 +323,7 @@ export const POST = route(async (request: NextRequest) => {
   return ok({
     success: true,
     orderId: order.id,
-    amount: totalPayable,
-    baseFee,
-    gstAmount,
+    amount,
     currency: order.currency || "INR",
     keyId: RAZORPAY_KEY_ID,
     receipt: order.receipt,

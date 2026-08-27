@@ -74,8 +74,8 @@ export const GET = route(async (request: NextRequest) => {
 
   const buyerIds = new Set<string>(paidUsers.map((u) => u._id.toString()));
   for (const o of offers) {
-    const bidder: unknown = (o as { buyer?: unknown }).buyer;
-    if (bidder) buyerIds.add(String(bidder));
+    const buyer: unknown = (o as { buyer?: unknown }).buyer;
+    if (buyer) buyerIds.add(String(buyer));
   }
 
   return ok({

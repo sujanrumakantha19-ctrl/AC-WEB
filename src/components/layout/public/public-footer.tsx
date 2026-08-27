@@ -26,12 +26,13 @@ export function PublicFooter() {
             <p className="leading-relaxed max-w-[220px]">{SITE_CONFIG.contact.address}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Support</p>
-            <a href={`mailto:${SITE_CONFIG.contact.email}`} className="hover:text-primary transition-colors">{SITE_CONFIG.contact.email}</a>
+            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Email</p>
+            <a href={`mailto:${SITE_CONFIG.contact.email}`} className="hover:text-primary transition-colors block">{SITE_CONFIG.contact.email}</a>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Website</p>
-            <a href="https://www.vksautoservices.org" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">www.vksautoservices.org</a>
+            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Contact</p>
+            <p>Call: <a href={`tel:${SITE_CONFIG.contact.phone}`} className="hover:text-primary transition-colors">{SITE_CONFIG.contact.phone}</a></p>
+            <p>WhatsApp: <a href={`https://wa.me/91${SITE_CONFIG.contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">95971 77351</a></p>
           </div>
         </div>
       </div>
@@ -41,6 +42,7 @@ export function PublicFooter() {
         <p>© {new Date().getFullYear()} VKS Auto Services. All rights reserved.</p>
         <div className="flex flex-wrap gap-3 md:gap-4">
           <Link href="/about" className="text-on-surface-variant hover:text-primary transition-colors">About Us</Link>
+          <Link href="/parking-sale-policy" className="text-on-surface-variant hover:text-primary transition-colors">Parking Sale Policy</Link>
           <Link href="/terms" className="text-on-surface-variant hover:text-primary transition-colors">Terms &amp; Conditions</Link>
           <Link href="/legal-privacy" className="text-on-surface-variant hover:text-primary transition-colors">Legal &amp; Privacy</Link>
           <Link href="/refund-policy" className="text-on-surface-variant hover:text-primary transition-colors">Refund Policy</Link>

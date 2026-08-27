@@ -7,7 +7,7 @@ import { useGetAuctionQuery, usePayAccessMutation } from "@/services/auctions-ap
 import { useGetRegistrationFeeQuery } from "@/services/settings-api";
 import { errorMessage } from "@/lib/helpers";
 
-const DEFAULT_FEE = 499;
+const DEFAULT_FEE = 500;
 
 type Razorpay = {
   open: () => void;
@@ -55,13 +55,18 @@ export default function RegistrationFeePaymentPage() {
   const auction = auctionData?.auction;
   const auctionTitle = auction?.title || "";
   const auctionFee = auction?.registrationFee || 0;
-  const settingFee = feeData?.value ? parseFloat(feeData.value) : NaN;
-  const baseFee =
+  const settingFee = feeData?.value ? parseInt(feeData.value) : NaN;
+  const registrationFee =
     auctionFee || (!isNaN(settingFee) && settingFee > 0 ? settingFee : DEFAULT_FEE);
-  const gstAmount = +(baseFee * 0.18).toFixed(2);
-  const totalAmount = +(baseFee + gstAmount).toFixed(2);
-  const registrationFee = totalAmount;
+  const totalAmount = registrationFee;
   const loading = (!!auctionId && !auctionData) || !feeData;
+
+  useEffect(() => {
+    if (auction?.isParkingSale) {
+      const dest = auctionId ? `/user/live/${auctionId}` : "/user/auctions";
+      router.replace(dest);
+    }
+  }, [auction?.isParkingSale, auctionId, router]);
 
   const loadRazorpayScript = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -254,20 +259,13 @@ export default function RegistrationFeePaymentPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-lg">verified</span>
-                <span className="text-xs text-on-surface-variant">Registration Fee (Base)</span>
+                <span className="text-xs text-on-surface-variant">Registration Fee</span>
               </div>
-              <span className="text-sm font-bold text-on-surface">₹{baseFee.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-lg">receipt_long</span>
-                <span className="text-xs text-on-surface-variant">GST (18%)</span>
-              </div>
-              <span className="text-sm font-bold text-on-surface">₹{gstAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-sm font-bold text-on-surface">₹{registrationFee.toLocaleString("en-IN")}</span>
             </div>
             <div className="border-t border-outline-variant/30 pt-3 flex items-center justify-between">
               <span className="text-sm font-bold text-on-surface">Total Payable</span>
-              <span className="text-lg font-extrabold text-primary">₹{totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span className="text-lg font-extrabold text-primary">₹{totalAmount.toLocaleString("en-IN")}</span>
             </div>
           </div>
         </div>

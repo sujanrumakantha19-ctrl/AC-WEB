@@ -211,7 +211,7 @@ export default function AdminAuctionDetailsPage() {
               )}
               <div>
                 <p className="text-xs font-bold text-outline uppercase tracking-wider">Reg. Fee</p>
-                <p className="text-base font-bold text-on-surface">{formatINR(auction.registrationFee || 0)}</p>
+                <p className="text-base font-bold text-on-surface">{isParkingSale ? "N/A (Free)" : formatINR(auction.registrationFee || 0)}</p>
               </div>
               {!isUpcoming && (
                 <div

@@ -148,6 +148,7 @@ export const POST = route(async (request: NextRequest) => {
 
   const isParkingSale = !!body.isParkingSale;
   if (isParkingSale) {
+    body.registrationFee = 0;
     const start = body.startTime ? new Date(body.startTime) : null;
     if (!start || isNaN(start.getTime())) {
       return badRequest("Parking Sale requires a start date & time");

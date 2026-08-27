@@ -24,6 +24,10 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
   const body = await request.json();
   const { orderId, paymentId, signature } = body || {};
 
+  if (auction.isParkingSale) {
+    return ok({ success: true, alreadyPaid: true });
+  }
+
   const alreadyPaid = (user.paidAccessAuctions || []).some((aid: mongoose.Types.ObjectId) => aid.toString() === auction._id.toString());
   if (alreadyPaid) {
     return ok({ success: true, alreadyPaid: true });

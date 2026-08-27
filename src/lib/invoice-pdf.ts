@@ -22,11 +22,7 @@ export interface InvoicePdfInput {
   reference?: string;
 }
 
-const inr = (n: number) =>
-  `Rs. ${(n || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: (n || 0) % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  })}`;
+const inr = (n: number) => `Rs. ${(n || 0).toLocaleString("en-IN")}`;
 
 /**
  * Builds a styled payment receipt / invoice as a PDF buffer.
@@ -172,39 +168,23 @@ export function generatePaymentInvoicePdf(input: InvoicePdfInput): Promise<Buffe
         .font("Helvetica-Bold")
         .text("AMOUNT", colAmountRight, tableTop, { align: "right" });
 
-      // ── Table rows ──
-      const baseFee = input.amount === 588.82 ? 499 : +(input.amount / 1.18).toFixed(2);
-      const gstAmount = +(input.amount - baseFee).toFixed(2);
-
-      let rowY = tableTop + 24;
+      // ── Table row ──
+      const rowTop = tableTop + 26;
       doc
         .fill("#191c1e")
-        .fontSize(9.5)
+        .fontSize(10)
         .font("Helvetica")
-        .text(input.description || "Auction Registration Fee (Base)", colDesc, rowY);
+        .text(input.description || "Registration Fee", colDesc, rowTop);
       doc
         .fill("#191c1e")
-        .fontSize(9.5)
+        .fontSize(10)
         .font("Helvetica-Bold")
-        .text(inr(baseFee), colAmountRight, rowY, { align: "right" });
+        .text(inr(input.amount), colAmountRight, rowTop, { align: "right" });
 
-      rowY += 18;
-      doc
-        .fill("#191c1e")
-        .fontSize(9.5)
-        .font("Helvetica")
-        .text("GST @ 18%", colDesc, rowY);
-      doc
-        .fill("#191c1e")
-        .fontSize(9.5)
-        .font("Helvetica-Bold")
-        .text(inr(gstAmount), colAmountRight, rowY, { align: "right" });
-
-      rowY += 18;
-      doc.moveTo(margin, rowY + 4).lineTo(rightX, rowY + 4).strokeColor("#dde3ea").lineWidth(1).stroke();
+      doc.moveTo(margin, rowTop + 20).lineTo(rightX, rowTop + 20).strokeColor("#dde3ea").lineWidth(1).stroke();
 
       // ── Total ──
-      const totalTop = rowY + 16;
+      const totalTop = rowTop + 34;
       doc
         .fill("#191c1e")
         .fontSize(10)

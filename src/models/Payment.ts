@@ -18,6 +18,7 @@ export interface IPayment extends Document {
   refundedAt?: Date;
   refundError?: string;
   invoiceSentAt?: Date;
+  refundEmailSentAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +45,7 @@ const PaymentSchema = new Schema<IPayment>(
     refundedAt: { type: Date },
     refundError: { type: String },
     invoiceSentAt: { type: Date },
+    refundEmailSentAt: { type: Date },
   },
   { timestamps: true }
 );

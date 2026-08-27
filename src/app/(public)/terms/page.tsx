@@ -22,10 +22,10 @@ const sections = [
   {
     title: "3. Registration Fee",
     points: [
-      "A Registration Fee of ₹499 + 18% GST (Total ₹588.82) per auction (as displayed on the auction listing) is charged to participate in that auction.",
+      "A Registration Fee of ₹588 (₹499 base + ₹89 18% GST) is charged to participate in an auction.",
       "This fee is payable through the online payment gateway before offers can be placed.",
       "The fee covers identity verification, access to verified vehicle details, and participation in the auction.",
-      "Refunds, if any, are governed by the Refund Policy.",
+      "Only the ₹499 base fee is refundable as governed by the Refund Policy.",
     ],
   },
   {

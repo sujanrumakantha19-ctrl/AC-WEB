@@ -34,7 +34,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
   const [mileage, setMileage] = useState("");
   const [location, setLocation] = useState("");
   const [startingOffer, setStartingOffer] = useState("");
-  const [registrationFee, setRegistrationFee] = useState("499");
+  const [registrationFee, setRegistrationFee] = useState("588");
   const [offerUnlockFee, setOfferUnlockFee] = useState("");
   const [ownership, setOwnership] = useState("");
   const [insurance, setInsurance] = useState("");
@@ -74,7 +74,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
     setMileage(auction.mileage ? String(auction.mileage) : "");
     setLocation(auction.location || "");
     setStartingOffer(auction.startingOffer ? String(auction.startingOffer) : "");
-    setRegistrationFee(auction.registrationFee ? String(auction.registrationFee) : "499");
+    setRegistrationFee(auction.registrationFee ? String(auction.registrationFee) : "588");
     setOfferUnlockFee(auction.offerUnlockFee ? String(auction.offerUnlockFee) : "");
     setOwnership(auction.ownership || "");
     setInsurance(auction.insurance || "");
@@ -178,6 +178,12 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       }
     }
 
+    if (!make.trim()) {
+      setError("Brand / Make is required");
+      setIsSubmitting(false);
+      return;
+    }
+
     const startingOfferNum = startingOffer ? Number(startingOffer) : NaN;
     const regFeeNum = registrationFee ? Number(registrationFee) : 0;
     const unlockNum = offerUnlockFee ? Number(offerUnlockFee) : 0;
@@ -192,8 +198,8 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       setIsSubmitting(false);
       return;
     }
-    if (!Number.isFinite(regFeeNum) || regFeeNum <= 0) {
-      setError("Registration Fee must be a positive number");
+    if (!isParkingSale && (!Number.isFinite(regFeeNum) || regFeeNum <= 0 || !Number.isInteger(regFeeNum))) {
+      setError("Registration Fee must be a positive whole number (no decimals)");
       setIsSubmitting(false);
       return;
     }
@@ -245,7 +251,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       mileage: parseInt(mileage),
       location,
       startingOffer: startingOfferNum,
-      registrationFee: regFeeNum,
+      registrationFee: isParkingSale ? 0 : regFeeNum,
       offerUnlockFee: unlockNum,
       description,
       rules,
@@ -264,17 +270,31 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
         : await Promise.all(additionalImages.map(uploadFile)),
     };
 
+    if (isEdit && auction?.status === "ENDED") {
+      setError("Completed auctions cannot be edited");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       if (isEdit) {
-        await updateAuction({ id: auctionId as string, body }).unwrap();
+        await updateAuction({ id: auctionId!, body }).unwrap();
       } else {
         await createAuction(body).unwrap();
       }
       setIsSubmitting(false);
       setIsPublished(true);
       setTimeout(() => {
-        router.push("/admin/auctions");
-      }, 1500);
+        if (fromParam) {
+          router.push(fromParam);
+        } else if (isEdit && auction?.status === "LIVE") {
+          router.push(`/admin/auctions/live/${auctionId}`);
+        } else if (isEdit) {
+          router.push(`/admin/auctions/${auctionId}/details`);
+        } else {
+          router.push("/admin/auctions");
+        }
+      }, 1200);
     } catch (err) {
       setError(errorMessage(err, "Failed to save auction"));
       setIsSubmitting(false);
@@ -331,22 +351,14 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-on-surface-variant">Brand / Make <span className="text-error">*</span></label>
-                  <select
+                  <input
+                    className="h-10 rounded-xl px-3 text-xs font-medium text-on-surface placeholder:text-outline border border-outline-variant/40 focus:outline-none focus:border-primary"
+                    placeholder="e.g. Mercedes-Benz"
+                    type="text"
                     value={make}
                     onChange={(e) => setMake(e.target.value)}
-                    className="h-10 rounded-xl px-3 bg-white text-xs font-medium text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary"
                     required
-                  >
-                    <option value="">Select Brand</option>
-                    <option value="Mercedes-Benz">Mercedes-Benz</option>
-                    <option value="BMW">BMW</option>
-                    <option value="Audi">Audi</option>
-                    <option value="Lamborghini">Lamborghini</option>
-                    <option value="Ferrari">Ferrari</option>
-                    <option value="Land Rover">Land Rover</option>
-                    <option value="Mahindra">Mahindra</option>
-                    <option value="Toyota">Toyota</option>
-                  </select>
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -444,7 +456,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-on-surface-variant">KM Driven</label>
+                  <label className="text-xs font-bold text-on-surface-variant">KM Driven <span className="text-error">*</span></label>
                   <input
                     className="h-10 rounded-xl px-3 text-xs font-medium text-on-surface placeholder:text-outline border border-outline-variant/40 focus:outline-none focus:border-primary"
                     placeholder="e.g. 10000"
@@ -456,7 +468,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold text-on-surface-variant">Location</label>
+                  <label className="text-xs font-bold text-on-surface-variant">Location <span className="text-error">*</span></label>
                   <input
                     className="h-10 rounded-xl px-3 text-xs font-medium text-on-surface placeholder:text-outline border border-outline-variant/40 focus:outline-none focus:border-primary"
                     placeholder="e.g. Gurugram, Haryana"
@@ -512,7 +524,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
                       ) : (
                         <div className="flex flex-col items-center gap-1 p-2">
                           <span className="material-symbols-outlined text-primary text-lg">star</span>
-                          <span className="text-[8px] font-bold text-primary text-center leading-tight">Main Image*</span>
+                          <span className="text-[8px] font-bold text-primary text-center leading-tight">Main Image <span className="text-error">*</span></span>
                         </div>
                       )}
                       <input type="file" accept="image/*" className="hidden" onChange={handleMainImage} />
@@ -628,18 +640,20 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-on-surface-variant">Registration Fee for this Auction (₹) <span className="text-error">*</span></label>
-                    <input
-                      className="w-full h-10 rounded-xl px-3 text-xs font-bold text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary"
-                      type="number"
-                      step={1}
-                      value={registrationFee}
-                      onChange={(e) => setRegistrationFee(e.target.value)}
-                      required
-                      min="1"
-                    />
-                  </div>
+                  {!isParkingSale && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-on-surface-variant">Registration Fee for this Auction (₹) <span className="text-error">*</span></label>
+                      <input
+                        className="w-full h-10 rounded-xl px-3 text-xs font-bold text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary"
+                        type="number"
+                        step={1}
+                        value={registrationFee}
+                        onChange={(e) => setRegistrationFee(e.target.value)}
+                        required
+                        min="1"
+                      />
+                    </div>
+                  )}
 
                 </div>
               </div>

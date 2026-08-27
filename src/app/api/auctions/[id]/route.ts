@@ -60,8 +60,23 @@ export const PUT = route<{ id: string }>(async (request: NextRequest, { params }
   }
 
   const existing = await Auction.findById(id);
+  if (!existing) return notFound("Auction not found");
+
+  if (existing.status === "ENDED") {
+    return badRequest("Completed auctions cannot be edited");
+  }
+
+  // Preserve existing transaction & offer history
+  if (existing.totalOffers > 0) {
+    delete body.currentOffer;
+    delete body.totalOffers;
+    delete body.winner;
+    delete body.winningOffer;
+  }
+
   if (body.isParkingSale) {
-    const start = body.startTime ? new Date(body.startTime) : existing ? new Date(existing.startTime) : null;
+    body.registrationFee = 0;
+    const start = body.startTime ? new Date(body.startTime) : new Date(existing.startTime);
     if (!start || isNaN(start.getTime())) {
       return badRequest("Parking Sale requires a start date & time");
     }
@@ -70,33 +85,47 @@ export const PUT = route<{ id: string }>(async (request: NextRequest, { params }
     body.endTime = end.toISOString();
     body.rounds = 1;
     body.roundTimes = [{ start: start.toISOString(), end: end.toISOString() }];
-    const topOffer = existing && existing.totalOffers > 0
-      ? await Offer.findOne({ auction: id }).sort({ amount: -1 })
+    const topOffer = existing.totalOffers > 0
+      ? ((await Offer.findOne({ auction: id }).sort({ amount: -1 }).lean()) as any)
       : null;
-    const prevTop = existing?.roundStates?.[0];
+    const prevTop = existing.roundStates?.[0];
     body.currentRound = 1;
     body.roundStates = [{
       round: 1,
-      status: "pending",
-      currentRound: 1,
-      highestOffer: topOffer?.amount || prevTop?.highestOffer || existing?.currentOffer || existing?.startingOffer || 0,
+      status: prevTop?.status || (existing.status === "LIVE" ? "active" : "pending"),
+      highestOffer: topOffer?.amount || prevTop?.highestOffer || existing.currentOffer || existing.startingOffer || 0,
       highestBuyer: topOffer?.buyer || prevTop?.highestBuyer || null,
-      startedAt: null,
-      pausedAt: null,
+      startedAt: prevTop?.startedAt || null,
+      pausedAt: prevTop?.pausedAt || null,
     }];
+  } else if (existing.roundStates && existing.roundStates.length > 0) {
+    const numRounds = body.rounds || existing.rounds || 1;
+    body.roundStates = Array.from({ length: numRounds }, (_, i) => {
+      const prev = existing.roundStates[i];
+      return {
+        round: i + 1,
+        status: prev?.status || (i === 0 && existing.status === "LIVE" ? "active" : "pending"),
+        highestOffer: prev?.highestOffer || (i === 0 ? body.startingOffer || existing.startingOffer : 0),
+        highestBuyer: prev?.highestBuyer || null,
+        startedAt: prev?.startedAt || null,
+        endedAt: prev?.endedAt || null,
+        pausedAt: prev?.pausedAt || null,
+      };
+    });
   }
-  if (existing && existing.totalOffers === 0 && body.startingOffer) {
+
+  if (existing.totalOffers === 0 && body.startingOffer) {
     body.currentOffer = body.startingOffer;
   }
-  if (existing) {
-    const kept = new Set(
-      [body.image, ...(body.images || [])].map(imageIdFromUrl).filter(Boolean) as string[]
-    );
-    const removed = [existing.image, ...(existing.images || [])]
-      .map(imageIdFromUrl)
-      .filter((ref): ref is string => !!ref && !kept.has(ref));
-    await Promise.all(removed.map(deleteImage));
-  }
+
+  const kept = new Set(
+    [body.image, ...(body.images || [])].map(imageIdFromUrl).filter(Boolean) as string[]
+  );
+  const removed = [existing.image, ...(existing.images || [])]
+    .map(imageIdFromUrl)
+    .filter((ref): ref is string => !!ref && !kept.has(ref));
+  await Promise.all(removed.map(deleteImage));
+
   const auction = await Auction.findByIdAndUpdate(id, body, { new: true });
   if (!auction) return notFound("Auction not found");
 

@@ -5,6 +5,7 @@ import User from "@/models/User";
 import Notification from "@/models/Notification";
 import { notifyAdmins } from "@/lib/auction-notifications";
 import { sendInvoiceForPayment } from "@/lib/invoice-email";
+import { sendRefundConfirmationEmail } from "@/lib/email";
 
 const getKeys = () => ({
   keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_TNJwP7qOIAy8zV",
@@ -364,8 +365,8 @@ export async function syncRefundSettlements(filter?: {
     const userId = String(populatedUser?._id ?? payment.user);
 
     if (refund.status === "processed") {
-      await Payment.updateOne(
-        { _id: payment._id },
+      const claim = await Payment.updateOne(
+        { _id: payment._id, status: "REFUND_PENDING" },
         {
           $set: {
             status: "REFUNDED",
@@ -376,15 +377,45 @@ export async function syncRefundSettlements(filter?: {
         }
       );
 
-      await User.updateOne({ _id: userId }, { $addToSet: { refundedAuctions: auctionId } });
+      if (claim.modifiedCount > 0) {
+        await User.updateOne({ _id: userId }, { $addToSet: { refundedAuctions: auctionId } });
 
-      await Notification.create({
-        user: userId,
-        title: "Registration fee refunded",
-        message: `Your registration deposit of ₹${(payment.amount ?? 0).toLocaleString("en-IN")} for ${auctionTitle} has been refunded to your payment method.`,
-        type: "system",
-        relatedAuction: auctionId,
-      });
+        const refundAmount = 499;
+        await Notification.create({
+          user: userId,
+          title: "Registration fee refunded",
+          message: `Your base registration fee deposit of ₹${refundAmount} for ${auctionTitle} has been refunded to your payment method (18% GST of ₹89 is non-refundable).`,
+          type: "system",
+          relatedAuction: auctionId,
+        });
+
+        // Send refund confirmation email to customer's registered email address
+        const userDoc = (await User.findById(userId).select("name email").lean()) as any;
+        if (userDoc?.email) {
+          try {
+            const emailClaim = await Payment.updateOne(
+              { _id: payment._id, refundEmailSentAt: { $exists: false } },
+              { $set: { refundEmailSentAt: new Date() } }
+            );
+            if (emailClaim.modifiedCount > 0) {
+              await sendRefundConfirmationEmail({
+                to: userDoc.email,
+                customerName: userDoc.name || userName || "Customer",
+                auctionTitle,
+                amount: `₹${refundAmount}`,
+                refundId: payment.refundId || refund.id,
+                date: new Date().toLocaleString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                }),
+              });
+            }
+          } catch (emailErr) {
+            console.error("[refund-cron] failed to send refund confirmation email for payment", payment._id, emailErr);
+          }
+        }
+      }
 
       settled += 1;
       continue;

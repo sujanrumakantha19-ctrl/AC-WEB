@@ -141,7 +141,7 @@ export function PublicAuctionDetailsClient({ id }: { id: string }) {
                 { label: "Year", value: auction.year?.toString() },
                 { label: "Make", value: auction.make },
                 { label: "Model", value: auction.model },
-                { label: "Registration Fee", value: auction.registrationFee ? formatINR(auction.registrationFee) : undefined },
+                { label: "Registration Fee", value: !isParkingSale && auction.registrationFee ? formatINR(auction.registrationFee) : undefined },
                 { label: "Offer Access Fee", value: auction.offerUnlockFee ? formatINR(auction.offerUnlockFee) : undefined },
                 { label: "Starting Offer", value: auction.startingOffer ? formatINR(auction.startingOffer) : undefined },
               ].filter(s => s.value).map((spec, idx) => (

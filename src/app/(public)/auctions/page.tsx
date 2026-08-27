@@ -11,13 +11,15 @@ import { useGetAuctionsQuery } from "@/services/auctions-api";
 import type { SerializedAuction } from "@/types";
 
 export default function PublicAuctionsPage() {
-  const [filter, setFilter] = useState<"ALL" | "VERIFIED">("ALL");
+  const [filter, setFilter] = useState<"ALL" | "LIVE" | "PARKING" | "UPCOMING">("ALL");
 
   const { data, isLoading } = useGetAuctionsQuery({ limit: 50 });
   const auctions = data?.auctions || [];
 
   const filteredAuctions = auctions.filter((a: SerializedAuction) => {
-    if (filter === "VERIFIED") return a.verifiedSeller;
+    if (filter === "LIVE") return a.status === "LIVE" && !a.isParkingSale;
+    if (filter === "PARKING") return a.isParkingSale;
+    if (filter === "UPCOMING") return a.status === "UPCOMING" && !a.isParkingSale;
     return true;
   });
 
@@ -27,35 +29,28 @@ export default function PublicAuctionsPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-3xl lg:text-4xl font-extrabold text-primary tracking-tight">
-              Upcoming Auctions
+              Vehicle Auctions
             </h1>
             <p className="text-base text-on-surface-variant mt-2 max-w-2xl">
-              Upcoming premium automotive auctions. Browse through our curated selection of luxury and heritage vehicles arriving soon.
+              Browse through our curated selection of luxury and heritage vehicles, live auctions, and parking sales.
             </p>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex bg-surface-container rounded-full p-1">
-              <button
-                onClick={() => setFilter("ALL")}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                  filter === "ALL"
-                    ? "bg-surface shadow-sm text-primary"
-                    : "text-on-surface-variant hover:text-primary"
-                }`}
-              >
-                All Listings
-              </button>
-              <button
-                onClick={() => setFilter("VERIFIED")}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                  filter === "VERIFIED"
-                    ? "bg-surface shadow-sm text-primary"
-                    : "text-on-surface-variant hover:text-primary"
-                }`}
-              >
-                Verified Only
-              </button>
+            <div className="flex bg-surface-container rounded-full p-1 flex-wrap">
+              {(["ALL", "LIVE", "PARKING", "UPCOMING"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilter(s)}
+                  className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+                    filter === s
+                      ? "bg-surface shadow-sm text-primary"
+                      : "text-on-surface-variant hover:text-primary"
+                  }`}
+                >
+                  {s === "ALL" ? "All" : s === "LIVE" ? "LIVE" : s === "PARKING" ? "Parking Sale" : "Upcoming"}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -68,13 +63,21 @@ export default function PublicAuctionsPage() {
           {filteredAuctions.map((a: SerializedAuction) => (
             <div
               key={a._id || a.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group flex flex-col justify-between"
+              className={`rounded-2xl overflow-hidden transition-all group flex flex-col justify-between border-2 ${
+                a.isParkingSale
+                  ? "bg-purple-50/80 border-purple-400 shadow-md shadow-purple-500/10 ring-2 ring-purple-400/20"
+                  : "bg-white border-transparent shadow-xs hover:shadow-md"
+              }`}
             >
               <div className="relative h-48 w-full overflow-hidden bg-black/5">
                 <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex justify-between items-center pointer-events-none">
-                  <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>
-                    {a.status === "LIVE" ? `LIVE` : a.status}
-                  </Badge>
+                  {a.isParkingSale ? (
+                    <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                  ) : (
+                    <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>
+                      {a.status === "LIVE" ? `LIVE` : a.status}
+                    </Badge>
+                  )}
                 </div>
                 <ImageWithGallery
                   src={a.image || ""}
@@ -134,9 +137,9 @@ export default function PublicAuctionsPage() {
                     <p className="text-[10px] text-outline mt-0.5">{a.totalOffers} Offers Placed</p>
                   </div>
 
-                  <Link href={`/login?redirect=/user/live/${a._id || a.id}`}>
-                    <button className="px-4 py-2 bg-primary hover:bg-secondary text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95">
-                      Login to Offer
+                  <Link href={a.isParkingSale ? `/auctions/${a._id || a.id}` : `/login?redirect=/user/live/${a._id || a.id}`}>
+                    <button className={`px-4 py-2 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 ${a.isParkingSale ? "bg-purple-700 hover:bg-purple-800" : "bg-primary hover:bg-secondary"}`}>
+                      {a.isParkingSale ? "Free" : "Login to Offer"}
                     </button>
                   </Link>
                 </div>

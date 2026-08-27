@@ -37,7 +37,9 @@ export function UserLiveRoomClient({ id }: { id: string }) {
 
   const auction = auctionData?.auction;
   const userId = user?._id || user?.id;
+  const isParkingSale = !!auction?.isParkingSale;
   const hasAccess =
+    isParkingSale ||
     !!user?.paidAccessAuctions?.some(
       (a) => a === id || (auction && a === auction._id)
     );
@@ -54,9 +56,13 @@ export function UserLiveRoomClient({ id }: { id: string }) {
       setOfferError("Offer amount must be a whole number (no decimals)");
       return;
     }
-    const bp = roundState?.basePrice ?? auction?.startingOffer;
+    const bp = roundState?.basePrice ?? auction?.startingOffer ?? 0;
     if (bp && val <= bp) {
-      setOfferError(`Offer must be higher than the base price ₹${bp.toLocaleString("en-IN")}`);
+      setOfferError(
+        isParkingSale
+          ? `Quote must be higher than the current highest quote of ₹${bp.toLocaleString("en-IN")}`
+          : `Offer must be higher than the current highest offer of ₹${bp.toLocaleString("en-IN")}`
+      );
       return;
     }
     try {
@@ -125,7 +131,6 @@ export function UserLiveRoomClient({ id }: { id: string }) {
   const userHasOffer = roundState?.userHasOfferThisRound;
   const isEnded = auction.status === "ENDED";
   const isLive = auction.status === "LIVE";
-  const isParkingSale = !!auction.isParkingSale;
   const isRoundActive = roundStates[currentRound - 1]?.status === "active";
   const winnerId = typeof auction.winner === "string" ? auction.winner : auction.winner?._id;
   const isWinner = isEnded && !!userId && !!winnerId && winnerId.toString() === userId.toString();
@@ -285,7 +290,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                     )}
                     <p className="text-xs font-bold text-on-surface">{userHasOffer ? "Place Another Quote" : "Place Your Quote"}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
-                      <p className="text-[10px] font-bold text-outline uppercase">Base Price: {formatINR(basePrice)}</p>
+                      <p className="text-[10px] font-bold text-outline uppercase">Highest Quote: {formatINR(basePrice)}</p>
                       <div className="flex gap-2 flex-1">
                         <input
                           type="number"
@@ -293,7 +298,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                           min={basePrice + 1}
                           value={offerAmount}
                           onChange={(e) => setOfferAmount(e.target.value)}
-                          placeholder={`Above ${basePrice.toLocaleString("en-IN")}`}
+                          placeholder={`Must be higher than ₹${basePrice.toLocaleString("en-IN")}`}
                           className="flex-1 h-10 rounded-xl px-3 text-xs font-medium focus:outline-none focus:border-primary border border-outline-variant/40"
                         />
                         <button
@@ -325,7 +330,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                   <>
                     <p className="text-xs font-bold text-on-surface">Place Offer — Round {currentRound}</p>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-2">
-                      <p className="text-[10px] font-bold text-outline uppercase">Starting Price: {formatINR(basePrice)}</p>
+                      <p className="text-[10px] font-bold text-outline uppercase">Highest Offer: {formatINR(basePrice)}</p>
                       <div className="flex gap-2 flex-1">
                         <input
                           type="number"
@@ -333,7 +338,7 @@ export function UserLiveRoomClient({ id }: { id: string }) {
                           min={basePrice + 1}
                           value={offerAmount}
                           onChange={(e) => setOfferAmount(e.target.value)}
-                          placeholder={`Above ${basePrice.toLocaleString("en-IN")}`}
+                          placeholder={`Must be higher than ₹${basePrice.toLocaleString("en-IN")}`}
                           className="flex-1 h-10 rounded-xl px-3 text-xs font-medium focus:outline-none focus:border-primary border border-outline-variant/40"
                         />
                         <button
