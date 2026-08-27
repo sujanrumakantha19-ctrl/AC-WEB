@@ -81,3 +81,25 @@ export async function notifyAllCustomers(
     console.error("[notify] customer broadcast failed", err);
   }
 }
+
+/**
+ * Send WhatsApp reminder messages to all users before an auction starts.
+ */
+export async function sendAuctionWhatsAppReminders(auction: any) {
+  try {
+    const { sendWhatsAppReminderMessage } = await import("@/lib/whatsapp");
+    const users = await User.find({ role: "user", phone: { $exists: true, $ne: "" } }).lean();
+    const startTimeStr = auction.startTime
+      ? new Date(auction.startTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+      : "soon";
+    for (const u of users) {
+      if (u.phone) {
+        await sendWhatsAppReminderMessage(u.name || "Customer", u.phone, auction.title || "Vehicle Auction", startTimeStr);
+      }
+    }
+    const AuctionModel = (await import("@/models/Auction")).default;
+    await AuctionModel.findByIdAndUpdate(auction._id, { reminderSent: true });
+  } catch (err) {
+    console.error("[whatsapp-reminder] Error sending reminders", err);
+  }
+}
