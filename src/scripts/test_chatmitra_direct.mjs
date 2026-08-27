@@ -21,12 +21,9 @@ function normalizeWhatsAppNumber(phone) {
   return digits;
 }
 
-async function testNumber(phone) {
+async function testWithLang(phone, lang) {
   const token = process.env.CHATMITRA_API_TOKEN;
-  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_created_utility_v1_20260822210848";
-
-  console.log(`Using token ending in ...${token ? token.slice(-10) : 'NONE'}`);
-  console.log(`Using templateName: ${templateName}`);
+  const templateName = "account_created_utility_v1_20260822210848";
 
   const payload = {
     recipient_mobile_number: normalizeWhatsAppNumber(phone),
@@ -35,13 +32,13 @@ async function testNumber(phone) {
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en_US",
+          language: lang,
           components: [
             {
               type: "body",
               parameters: [
                 { type: "text", text: "TestUser" },
-                { type: "text", text: "Contact Admin" }
+                { type: "text", text: "https://vksautoservices.org" }
               ],
             },
           ],
@@ -50,7 +47,7 @@ async function testNumber(phone) {
     ],
   };
 
-  console.log(`Sending ChatMitra test to ${phone}...`);
+  console.log(`\nTesting ${phone} with lang=${lang}...`);
   const res = await fetch(CHATMITRA_API_URL, {
     method: "POST",
     headers: {
@@ -61,8 +58,13 @@ async function testNumber(phone) {
   });
 
   const text = await res.text();
-  console.log("ChatMitra HTTP Status:", res.status);
-  console.log("ChatMitra Response Text:", text);
+  console.log(`Lang [${lang}] Response:`, text);
 }
 
-testNumber("9902262397").catch(console.error);
+async function run() {
+  const target = "9902262397";
+  await testWithLang(target, "en");
+  await testWithLang(target, "en_US");
+}
+
+run().catch(console.error);
