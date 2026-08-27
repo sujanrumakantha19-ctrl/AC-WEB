@@ -7,7 +7,7 @@ export const SITE_CONFIG = {
   contact: {
     phone: "9003991351",
     whatsapp: "9597177351",
-    email: "owner@vksautosettleeauctions.com",
+    email: "owner@vksautoserviceauctions.com",
     address: "98/13, Kodangi Thoppu Street, Thirupparankundram, Madurai - 625005",
   },
 } as const;

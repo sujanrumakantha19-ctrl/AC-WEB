@@ -53,7 +53,7 @@ export async function sendResetOtpEmail({
   `;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
     to,
     subject: `Your Password Reset Verification Code: ${otp} - VKS Autoservices`,
     html: htmlContent,
@@ -74,7 +74,7 @@ export async function sendPaymentInvoiceEmail({
   fileName: string;
 }) {
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
     to,
     subject: `Your Payment Receipt ${fileName.replace(/[^\d]/g, "") ? `(${fileName.replace(/[^\d]/g, "")})` : ""} - VKS Autoservices`,
     html: `
@@ -88,7 +88,7 @@ export async function sendPaymentInvoiceEmail({
           <h3 style="color: #191c1e; font-size: 20px; margin-top: 0; font-weight: 800;">Payment Invoice Attached 📄</h3>
           <p style="color: #42474f; font-size: 14px; line-height: 1.6;">Thank you for your payment. Please find your official payment invoice attached to this email.</p>
 
-          <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">If you have any questions or require support, reach out to us at owner@vksautosettleeauctions.com, WhatsApp us at 95971 77351, or call us at 9003991351.</p>
+          <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">If you have any questions or require support, reach out to us at owner@vksautoserviceauctions.com, WhatsApp us at 95971 77351, or call us at 9003991351.</p>
         </div>
 
         <div style="text-align: center; margin-top: 24px; color: #727780; font-size: 11px;">
@@ -152,7 +152,7 @@ export async function sendWinnerCongratulationsEmail({
           ${detailRow("Ended On", endedAt)}
         </table>
 
-        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Our team will reach out to you shortly with the next steps for completing your purchase. For any queries, contact us at owner@vksautosettleeauctions.com, WhatsApp 95971 77351, or call 9003991351.</p>
+        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Our team will reach out to you shortly with the next steps for completing your purchase. For any queries, contact us at owner@vksautoserviceauctions.com, WhatsApp 95971 77351, or call 9003991351.</p>
       </div>
 
       <div style="text-align: center; margin-top: 24px; color: #727780; font-size: 11px;">
@@ -162,7 +162,7 @@ export async function sendWinnerCongratulationsEmail({
   `;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
     to,
     subject: `Congratulations! You Won the ${saleType} - ${auctionName} | VKS Autoservices`,
     html: htmlContent,
@@ -214,7 +214,7 @@ export async function sendRefundConfirmationEmail({
           ${date ? detailRow("Confirmed Date", date) : ""}
         </table>
 
-        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Depending on your bank or card issuer, the credited amount will reflect on your statement within 1–3 business days. If you have any questions, reach out to us at owner@vksautosettleeauctions.com, WhatsApp 95971 77351, or call 9003991351.</p>
+        <p style="color: #727780; font-size: 12px; line-height: 1.5; margin-bottom: 0;">Depending on your bank or card issuer, the credited amount will reflect on your statement within 1–3 business days. If you have any questions, reach out to us at owner@vksautoserviceauctions.com, WhatsApp 95971 77351, or call 9003991351.</p>
       </div>
 
       <div style="text-align: center; margin-top: 24px; color: #727780; font-size: 11px;">
@@ -224,7 +224,7 @@ export async function sendRefundConfirmationEmail({
   `;
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautosettleeauctions.com>',
+    from: process.env.EMAIL_FROM || '"VKS Autoservices" <owner@vksautoserviceauctions.com>',
     to,
     subject: `Refund Confirmation: Deposit for ${auctionTitle} Credited - VKS Autoservices`,
     html: htmlContent,

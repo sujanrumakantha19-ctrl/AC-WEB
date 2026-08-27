@@ -116,8 +116,8 @@ export default function LegalPrivacyPage() {
             <p>Madurai - 625005.</p>
             <p className="mt-2">
               E-mail id:{" "}
-              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
-                owner@vksautosettleeauctions.com
+              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
+                owner@vksautoserviceauctions.com
               </a>
             </p>
             <p>

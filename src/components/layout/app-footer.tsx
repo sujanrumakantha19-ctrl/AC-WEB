@@ -61,7 +61,7 @@ export function AppFooter() {
             WhatsApp: <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="hover:underline font-bold text-on-primary-container">+91 95971 77351</a>
           </p>
           <p className="text-label-sm text-white/60">
-            <a href="mailto:owner@vksautosettleeauctions.com" className="hover:underline">owner@vksautosettleeauctions.com</a>
+            <a href="mailto:owner@vksautoserviceauctions.com" className="hover:underline">owner@vksautoserviceauctions.com</a>
           </p>
         </div>
       </div>
