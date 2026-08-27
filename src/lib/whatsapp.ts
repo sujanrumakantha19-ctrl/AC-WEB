@@ -14,13 +14,19 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
     return;
   }
 
-  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_welcome_v1";
+  const templateName = process.env.CHATMITRA_WELCOME_TEMPLATE_NAME || "account_created_utility_v1_20260822210848";
+  const language = process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en_US";
   const firstName = name.trim().split(/\s+/)[0] || name;
 
-  const parameters: { type: string; text: string }[] = [{ type: "text", text: firstName }];
-  if (groupLink) {
-    parameters.push({ type: "text", text: groupLink });
+  let cleanLink = groupLink ? groupLink.trim().replace(/^https?:\/\//i, "") : "vksautoservices.org";
+  if (!cleanLink || cleanLink.toLowerCase() === "contact admin") {
+    cleanLink = "vksautoservices.org";
   }
+
+  const parameters: { type: string; text: string }[] = [
+    { type: "text", text: firstName },
+    { type: "text", text: cleanLink },
+  ];
 
   const payload = {
     recipient_mobile_number: normalizeWhatsAppNumber(phone),
@@ -29,7 +35,7 @@ export async function sendWhatsAppWelcomeMessage(name: string, phone: string, gr
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_WELCOME_TEMPLATE_LANGUAGE || "en",
+          language,
           components: [
             {
               type: "body",
@@ -67,7 +73,7 @@ export async function sendWhatsAppAuctionReminderMessage(
   phone: string,
   vehicleTitle: string,
   startTime: string,
-  auctionUrl = "https://vksautoservices.org/auctions"
+  auctionUrl = "vksautoservices.org/auctions"
 ): Promise<void> {
   const token = process.env.CHATMITRA_API_TOKEN;
   if (!token) {
@@ -75,14 +81,17 @@ export async function sendWhatsAppAuctionReminderMessage(
     return;
   }
 
-  const templateName = process.env.CHATMITRA_REMINDER_TEMPLATE_NAME || "auction_reminder_v1";
+  const templateName = process.env.CHATMITRA_REMINDER_TEMPLATE_NAME || "auction_reminder_utility_v1_20260822205437";
+  const language = process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en_US";
   const firstName = name.trim().split(/\s+/)[0] || name;
+
+  const cleanUrl = auctionUrl.trim().replace(/^https?:\/\//i, "");
 
   const parameters = [
     { type: "text", text: firstName },
     { type: "text", text: vehicleTitle },
     { type: "text", text: startTime },
-    { type: "text", text: auctionUrl }
+    { type: "text", text: cleanUrl },
   ];
 
   const payload = {
@@ -92,7 +101,7 @@ export async function sendWhatsAppAuctionReminderMessage(
         kind: "template",
         template: {
           name: templateName,
-          language: process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en",
+          language,
           components: [
             {
               type: "body",
