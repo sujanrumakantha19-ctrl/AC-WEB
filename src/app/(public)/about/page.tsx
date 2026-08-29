@@ -78,8 +78,8 @@ export default function AboutUsPage() {
           <div className="space-y-3">
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">E-mail id</p>
-              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-                owner@vksautoserviceauctions.com
+              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+                owner@vksautosettleeauctions.com
               </a>
             </div>
             <div>
@@ -110,8 +110,8 @@ export default function AboutUsPage() {
           <div className="space-y-3">
             <div>
               <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Email</p>
-              <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-                owner@vksautoserviceauctions.com
+              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+                owner@vksautosettleeauctions.com
               </a>
             </div>
             <div>

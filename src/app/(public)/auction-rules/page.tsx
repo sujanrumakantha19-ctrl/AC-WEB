@@ -113,8 +113,8 @@ export default function AuctionRulesPage() {
           <p>98/13, Kodangi Thoppu Street, Thirupparankundram, Madurai - 625005.</p>
           <p className="mt-2">
             E-mail:{" "}
-            <a href="mailto:owner@vksautoserviceauctions.com" className="text-primary hover:underline">
-              owner@vksautoserviceauctions.com
+            <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
+              owner@vksautosettleeauctions.com
             </a>
           </p>
           <p>
