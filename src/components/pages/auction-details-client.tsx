@@ -8,17 +8,20 @@ import { formatINR } from "@/lib/utils";
 import { UpcomingCountdown } from "@/components/ui/upcoming-countdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetAuctionQuery } from "@/services/auctions-api";
-import { useGetMeQuery } from "@/services/auth-api";
+import { useAppSelector } from "@/redux/hooks";
+import { getServerNow } from "@/lib/server-time";
 
 export function AuctionDetailsClient({ id }: { id: string }) {
   const router = useRouter();
-  const [selectedImg, setSelectedImg] = useState("");
+  const user = useAppSelector((s) => s.auth.user);
+  const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
-  const { data: auctionData, isLoading } = useGetAuctionQuery(id);
-  const { data: meData } = useGetMeQuery();
+  const { data, isLoading } = useGetAuctionQuery(id, { pollingInterval: 5000 });
+  const auction = data?.auction;
 
-  const auction = auctionData?.auction;
-  const registered = !!meData?.user?.paidAccessAuctions?.some((a) => a.toString() === id);
+  const registered = !!user?.paidAccessAuctions?.some(
+    (a) => a === id || (auction && a === auction._id)
+  );
 
   if (isLoading) {
     return (
@@ -41,7 +44,7 @@ export function AuctionDetailsClient({ id }: { id: string }) {
     return (
       <div className="text-center py-20">
         <span className="material-symbols-outlined text-5xl text-outline">directions_car</span>
-        <p className="mt-3 text-sm font-bold text-on-surface">Vehicle not found</p>
+        <p className="mt-3 text-sm font-bold text-on-surface">Auction not found</p>
         <Link href="/user/auctions" className="inline-block mt-4 text-xs text-primary font-bold">
           ← Back to Auctions
         </Link>
@@ -50,7 +53,12 @@ export function AuctionDetailsClient({ id }: { id: string }) {
   }
 
   const isParkingSale = !!auction.isParkingSale;
-  const isLive = auction.status === "LIVE";
+  const isEnded = auction.status === "ENDED" || (
+    !isParkingSale &&
+    Boolean(auction.roundTimes?.length) &&
+    new Date(auction.roundTimes?.[auction.roundTimes.length - 1]?.end || auction.endTime || 0).getTime() <= getServerNow()
+  );
+  const isLive = !isEnded && auction.status === "LIVE";
   const hasAccess = isParkingSale || registered || !!auction.hasAccess;
 
   const allImages: string[] = [...(auction.images || [])];
@@ -90,10 +98,16 @@ export function AuctionDetailsClient({ id }: { id: string }) {
         {/* Image gallery */}
         <div className="bg-white rounded-2xl shadow-xs p-3">
           <div className="relative h-72 md:h-80 rounded-xl overflow-hidden bg-black/5">
-            <img src={activeImg} alt={auction.title} className="w-full h-full object-cover" />
+            {activeImg ? (
+              <img src={activeImg} alt={auction.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-surface-container">
+                <span className="material-symbols-outlined text-outline text-4xl">directions_car</span>
+              </div>
+            )}
             <div className="absolute top-3 left-3 z-10">
-              <Badge variant={isLive ? "live" : "warning"} pulse={isLive}>
-                {isLive ? "LIVE" : "UPCOMING"}
+              <Badge variant={isEnded ? "secondary" : isLive ? "live" : "warning"} pulse={isLive}>
+                {isEnded ? "ENDED" : isLive ? "LIVE" : "UPCOMING"}
               </Badge>
             </div>
             {allImages.length > 1 && (
@@ -148,7 +162,15 @@ export function AuctionDetailsClient({ id }: { id: string }) {
             <p className="text-xs text-on-surface-variant leading-relaxed mt-4">{auction.description}</p>
           )}
 
-          {isLive ? (
+          {isEnded ? (
+            <div className="mt-3 flex items-center justify-between bg-surface-container border border-outline-variant/30 rounded-lg px-3 py-2.5">
+              <div>
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Auction Status</p>
+                <p className="text-sm font-bold text-on-surface">Auction Ended</p>
+              </div>
+              <span className="material-symbols-outlined text-outline text-xl">event_available</span>
+            </div>
+          ) : isLive ? (
             <div className="mt-3 flex items-center justify-between bg-error/5 border border-error/20 rounded-lg px-3 py-2.5">
               <div>
                 <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
@@ -173,18 +195,28 @@ export function AuctionDetailsClient({ id }: { id: string }) {
           <div className="border-t border-outline-variant/30 pt-4 mt-5 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-on-surface-variant mb-0.5">Starting offer price</p>
-                <p className="text-xl font-extrabold text-primary">{formatINR(auction.currentOffer || auction.startingOffer)}</p>
+                <p className="text-[10px] text-on-surface-variant mb-0.5">
+                  {isParkingSale ? "Starting quote price" : "Starting offer price"}
+                </p>
+                <p className="text-xl font-extrabold text-primary">{formatINR(auction.startingOffer)}</p>
               </div>
-              {!isParkingSale && (
-                <div className="text-right">
-                  <p className="text-[10px] text-on-surface-variant mb-0.5">Registration fee</p>
-                  <p className="text-sm font-bold text-on-surface">{formatINR(auction.registrationFee || 0)}</p>
-                </div>
-              )}
+              <div className="text-right">
+                <p className="text-[10px] text-on-surface-variant mb-0.5">Registration fee</p>
+                <p className="text-sm font-bold text-on-surface">
+                  {isParkingSale ? "Free" : `${formatINR(auction.registrationFee || 0)} (+18% GST)`}
+                </p>
+              </div>
             </div>
 
-            {hasAccess ? (
+            {isEnded ? (
+              <button
+                disabled
+                className="w-full py-3 bg-surface-container-high text-on-surface-variant rounded-xl text-xs font-bold cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-sm">flag</span>
+                Auction Ended
+              </button>
+            ) : hasAccess ? (
               isLive ? (
                 <button
                   onClick={() => router.push(`/user/live/${id}`)}

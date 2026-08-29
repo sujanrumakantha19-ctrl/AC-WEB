@@ -34,7 +34,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
   const [mileage, setMileage] = useState("");
   const [location, setLocation] = useState("");
   const [startingOffer, setStartingOffer] = useState("");
-  const [registrationFee, setRegistrationFee] = useState("588");
+  const [registrationFee, setRegistrationFee] = useState("499");
   const [offerUnlockFee, setOfferUnlockFee] = useState("");
   const [ownership, setOwnership] = useState("");
   const [insurance, setInsurance] = useState("");
@@ -642,16 +642,20 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
 
                   {!isParkingSale && (
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-bold text-on-surface-variant">Registration Fee for this Auction (₹) <span className="text-error">*</span></label>
+                      <label className="text-xs font-bold text-on-surface-variant">Registration Fee (₹) <span className="text-error">*</span></label>
                       <input
                         className="w-full h-10 rounded-xl px-3 text-xs font-bold text-on-surface border border-outline-variant/40 focus:outline-none focus:border-primary"
                         type="number"
                         step={1}
                         value={registrationFee}
                         onChange={(e) => setRegistrationFee(e.target.value)}
+                        placeholder="e.g. 499"
                         required
                         min="1"
                       />
+                      <p className="text-[10px] text-on-surface-variant">
+                        Enter the base refundable registration fee. 18% GST will be added automatically at checkout.
+                      </p>
                     </div>
                   )}
 

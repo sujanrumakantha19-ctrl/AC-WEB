@@ -20,7 +20,7 @@ export const PATCH = route<{ id: string }>(async (request: NextRequest, { params
   if (body.capacity !== undefined) update.capacity = Number(body.capacity) || 1000;
   if (body.notifyBefore !== undefined) update.notifyBefore = Number(body.notifyBefore) || 900;
 
-  const group = await WhatsAppGroup.findByIdAndUpdate(id, update, { new: true }).lean();
+  const group: any = await WhatsAppGroup.findByIdAndUpdate(id, update, { new: true }).lean();
   if (!group) return notFound("Group not found");
 
   return ok({

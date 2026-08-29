@@ -56,45 +56,53 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
     }
   }
 
-  const rounds = auction.rounds || 1;
-  if (auction.status === "LIVE" && rounds > 1 && Array.isArray(auction.roundTimes) && auction.roundTimes.length >= rounds) {
-    for (let i = 0; i < rounds; i++) {
+  const totalRounds = auction.rounds || (Array.isArray(auction.roundTimes) ? auction.roundTimes.length : 1);
+  if (!auction.isParkingSale && auction.status !== "ENDED" && Array.isArray(auction.roundTimes) && auction.roundTimes.length > 0) {
+    let allCompleted = true;
+
+    for (let i = 0; i < totalRounds; i++) {
       const rs = auction.roundStates[i];
       if (!rs) continue;
       const startMs = new Date(auction.roundTimes[i]?.start || auction.startTime).getTime();
-      const endMs = new Date(auction.roundTimes[i]?.end).getTime();
+      const endMs = new Date(auction.roundTimes[i]?.end || auction.endTime).getTime();
       const t = now.getTime();
 
-      if (rs.status === "pending" && t >= startMs && t < endMs) {
-        rs.status = "active";
-        rs.startedAt = now;
-        rs.highestOffer = rs.highestOffer || auction.startingOffer;
-        auction.currentRound = i + 1;
-        changed = true;
-        await notifyRoundStarted(auction, i + 1);
-      } else if (rs.status === "active" && t >= endMs) {
-        rs.status = "completed";
-        rs.endedAt = now;
-        changed = true;
-        const next = auction.roundStates[i + 1];
-        if (next) {
-          next.status = "active";
-          next.startedAt = now;
-          next.highestOffer = rs.highestOffer;
-          auction.currentRound = i + 2;
-          await notifyRoundEnded(auction, i + 1);
-          await notifyRoundStarted(auction, i + 2);
-        } else {
-          const winnerId =
-            rs.highestBuyer && typeof rs.highestBuyer === "object" && rs.highestBuyer._id
-              ? rs.highestBuyer._id
-              : rs.highestBuyer;
-          auction.status = "ENDED";
-          auction.winner = winnerId;
-          auction.winningOffer = rs.highestOffer;
-          await notifyRoundEnded(auction, i + 1);
-          await notifyAuctionEnded(auction);
+      if (t < startMs) {
+        allCompleted = false;
+      } else if (t >= startMs && t < endMs) {
+        allCompleted = false;
+        if (rs.status !== "active" && rs.status !== "paused") {
+          rs.status = "active";
+          rs.startedAt = rs.startedAt || now;
+          rs.highestOffer = rs.highestOffer || auction.startingOffer;
+          auction.currentRound = i + 1;
+          changed = true;
+          await notifyRoundStarted(auction, i + 1);
         }
+      } else if (t >= endMs) {
+        if (rs.status !== "completed") {
+          rs.status = "completed";
+          rs.endedAt = rs.endedAt || now;
+          changed = true;
+          await notifyRoundEnded(auction, i + 1);
+        }
+      }
+    }
+
+    const lastRoundIdx = totalRounds - 1;
+    const lastEndMs = new Date(auction.roundTimes[lastRoundIdx]?.end || auction.endTime).getTime();
+    if (now.getTime() >= lastEndMs || allCompleted) {
+      if (auction.status !== "ENDED") {
+        const lastRs = auction.roundStates[lastRoundIdx];
+        const winnerId =
+          lastRs?.highestBuyer && typeof lastRs.highestBuyer === "object" && lastRs.highestBuyer._id
+            ? lastRs.highestBuyer._id
+            : lastRs?.highestBuyer;
+        auction.status = "ENDED";
+        auction.winner = winnerId;
+        auction.winningOffer = lastRs?.highestOffer || auction.currentOffer || auction.startingOffer;
+        changed = true;
+        await notifyAuctionEnded(auction);
       }
     }
   }

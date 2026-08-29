@@ -12,7 +12,7 @@ export default function UserPurchasesPage() {
       date: "Jul 28, 2026",
       status: "PAYMENT PENDING",
       isPending: true,
-      delivery: "Hub Dispatch Ready (Gurgaon)",
+      location: "Gurgaon",
       image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAV602PWWdVt8hOSpPgFIzqBTX44V_W-cxQns2i3xfUPXyfjgXTkxrAy5jDKdAWB1EdyE-UX9UwHF-w9UEAL8_Jwg0Hb70tDaRm2Rb2nBeIAqcj1mET4laGkYEq5lEKQaUqiUbC792dk95GF_uZFolXYuBXwChRz9cfnoPSNXrHUT4ipexfXibOS2-e8wxh1EdJutdSiNpSkFiRfYoYVizjYvSGRq_eUW95pZPJ2KtXNJd9qdc2zOcWz8lxM6XX0MWecF25CEbbPIG5",
       images: [
         "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1200",
@@ -30,7 +30,7 @@ export default function UserPurchasesPage() {
       date: "May 14, 2026",
       status: "DELIVERED & RC TRANSFERRED",
       isPending: false,
-      delivery: "Delivered to Gurugram Residence",
+      location: "Gurugram",
       image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&q=80&w=1200",
       images: [
         "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&q=80&w=1200",
@@ -70,7 +70,10 @@ export default function UserPurchasesPage() {
                 </div>
                 <h3 className="text-sm font-bold text-on-surface">{item.vehicle}</h3>
                 <p className="text-[11px] text-outline mt-0.5">{item.lotNumber} • Won on {item.date}</p>
-                <p className="text-[11px] text-on-surface-variant mt-1 font-medium">📍 {item.delivery}</p>
+                <p className="text-[11px] text-on-surface-variant mt-1 font-medium flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs text-primary">location_on</span>
+                  {item.location}
+                </p>
               </div>
             </div>
 

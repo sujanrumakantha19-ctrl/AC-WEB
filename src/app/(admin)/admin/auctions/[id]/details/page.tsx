@@ -11,6 +11,7 @@ import { useGetAuctionQuery, useGetAuctionParticipantsQuery } from "@/services/a
 import { useGetOffersQuery } from "@/services/offers-api";
 import { useAuctionLive } from "@/hooks/use-auction-live";
 import { ParticipantsPopup } from "@/components/pages/participants-popup";
+import { getServerNow } from "@/lib/server-time";
 import type { RoundState, Offer } from "@/types";
 
 const buyerOf = (offer: Offer) => (typeof offer.buyer === "object" ? offer.buyer : undefined);
@@ -97,10 +98,14 @@ export default function AdminAuctionDetailsPage() {
     );
   }
 
-  const isLive = auction.status === "LIVE";
-  const isEnded = auction.status === "ENDED";
-  const isUpcoming = !isLive && !isEnded;
   const isParkingSale = !!auction.isParkingSale;
+  const isEnded = auction.status === "ENDED" || (
+    !isParkingSale &&
+    Boolean(auction.roundTimes?.length) &&
+    new Date(auction.roundTimes?.[auction.roundTimes.length - 1]?.end || auction.endTime || 0).getTime() <= getServerNow()
+  );
+  const isLive = !isEnded && auction.status === "LIVE";
+  const isUpcoming = !isLive && !isEnded;
   const roundStates = auction.roundStates || [];
 
   const timelineOffers = offers

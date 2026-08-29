@@ -87,14 +87,14 @@ export async function notifyAllCustomers(
  */
 export async function sendAuctionWhatsAppReminders(auction: any) {
   try {
-    const { sendWhatsAppReminderMessage } = await import("@/lib/whatsapp");
+    const { sendWhatsAppAuctionReminderMessage } = await import("@/lib/whatsapp");
     const users = await User.find({ role: "user", phone: { $exists: true, $ne: "" } }).lean();
     const startTimeStr = auction.startTime
       ? new Date(auction.startTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
       : "soon";
     for (const u of users) {
       if (u.phone) {
-        await sendWhatsAppReminderMessage(u.name || "Customer", u.phone, auction.title || "Vehicle Auction", startTimeStr);
+        await sendWhatsAppAuctionReminderMessage(u.name || "Customer", u.phone, auction.title || "Vehicle Auction", startTimeStr);
       }
     }
     const AuctionModel = (await import("@/models/Auction")).default;

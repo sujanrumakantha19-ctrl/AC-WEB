@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Payment from "@/models/Payment";
-import { syncRefundSettlements } from "@/lib/razorpay-sync";
+import Auction from "@/models/Auction";
+import { syncRefundSettlements, syncPendingPayments } from "@/lib/razorpay-sync";
+import { processAuctionRefunds } from "@/lib/auction-refunds";
 
 type PopulatedPayment = {
   _id: unknown;
@@ -43,6 +45,19 @@ export async function GET(request: Request) {
     await dbConnect();
 
     try {
+      const endedAuctions = await Auction.find({
+        status: "ENDED",
+        refundsProcessed: { $ne: true },
+      }).select("_id").lean();
+      for (const a of endedAuctions) {
+        await processAuctionRefunds(String((a as any)._id));
+      }
+    } catch (err) {
+      console.error("[admin-payments] processAuctionRefunds trigger error", err);
+    }
+
+    try {
+      await syncPendingPayments();
       await syncRefundSettlements();
     } catch (err) {
       console.error("[admin-payments] refund settlement sync failed", err);

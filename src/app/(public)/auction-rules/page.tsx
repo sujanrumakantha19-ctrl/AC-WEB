@@ -31,7 +31,7 @@ const OFFER_RULES = [
 const FEES = [
   {
     title: "Registration Fee",
-    body: "₹588 per auction (₹499 base fee + ₹89 18% GST). Paid once per auction to participate. Only the ₹499 base fee is refundable as per the Refund Policy.",
+    body: "Configured per auction (e.g. ₹499 base + 18% GST). Paid once per auction to unlock participation. 100% of the base registration fee is refundable to eligible non-winning participants as per the Refund Policy (18% GST is a statutory non-refundable tax).",
   },
   {
     title: "Offer Access Fee",

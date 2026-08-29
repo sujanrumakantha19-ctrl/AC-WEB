@@ -350,7 +350,12 @@ export async function syncRefundSettlements(filter?: {
   let stillPending = 0;
 
   for (const payment of refundingPayments) {
-    const refund = await fetchRazorpayRefund(payment.refundId || "");
+    if (!payment.refundId) {
+      stillPending += 1;
+      continue;
+    }
+
+    const refund = await fetchRazorpayRefund(payment.refundId);
     if (!refund || !refund.status) {
       stillPending += 1;
       continue;
@@ -380,11 +385,14 @@ export async function syncRefundSettlements(filter?: {
       if (claim.modifiedCount > 0) {
         await User.updateOne({ _id: userId }, { $addToSet: { refundedAuctions: auctionId } });
 
-        const refundAmount = 499;
+        const refundAmountFormatted = refund.amount
+          ? (refund.amount / 100).toFixed(2)
+          : (payment.amount && payment.amount > 10 ? (payment.amount / 1.18).toFixed(2) : Number(payment.amount || 0).toFixed(2));
+
         await Notification.create({
           user: userId,
           title: "Registration fee refunded",
-          message: `Your base registration fee deposit of ₹${refundAmount} for ${auctionTitle} has been refunded to your payment method (18% GST of ₹89 is non-refundable).`,
+          message: `Your base registration fee deposit of ₹${refundAmountFormatted} for ${auctionTitle} has been successfully credited to your payment method (18% GST is non-refundable).`,
           type: "system",
           relatedAuction: auctionId,
         });
@@ -402,7 +410,7 @@ export async function syncRefundSettlements(filter?: {
                 to: userDoc.email,
                 customerName: userDoc.name || userName || "Customer",
                 auctionTitle,
-                amount: `₹${refundAmount}`,
+                amount: `₹${refundAmountFormatted}`,
                 refundId: payment.refundId || refund.id,
                 date: new Date().toLocaleString("en-IN", {
                   day: "2-digit",

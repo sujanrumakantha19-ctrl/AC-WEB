@@ -55,11 +55,16 @@ export default function RegistrationFeePaymentPage() {
   const auction = auctionData?.auction;
   const auctionTitle = auction?.title || "";
   const auctionFee = auction?.registrationFee || 0;
-  const settingFee = feeData?.value ? parseInt(feeData.value) : NaN;
-  const registrationFee =
-    auctionFee || (!isNaN(settingFee) && settingFee > 0 ? settingFee : DEFAULT_FEE);
-  const totalAmount = registrationFee;
+  const settingFee = feeData?.value ? parseFloat(feeData.value) : NaN;
+  const baseFee = Number(
+    auctionFee || (!isNaN(settingFee) && settingFee > 0 ? settingFee : 499)
+  );
+  const gstAmount = Number((baseFee * 0.18).toFixed(2));
+  const totalAmount = Number((baseFee + gstAmount).toFixed(2));
   const loading = (!!auctionId && !auctionData) || !feeData;
+
+  const formatPaisa = (n: number) =>
+    `₹${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   useEffect(() => {
     if (auction?.isParkingSale) {
@@ -201,12 +206,20 @@ export default function RegistrationFeePaymentPage() {
             </span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-on-surface-variant">Amount Paid</span>
-            <span className="font-extrabold text-primary">₹{totalAmount.toLocaleString("en-IN")}</span>
+            <span className="text-on-surface-variant">Base Deposit</span>
+            <span className="font-bold text-on-surface">{formatPaisa(baseFee)}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-on-surface-variant">GST (18%)</span>
+            <span className="font-bold text-on-surface">{formatPaisa(gstAmount)}</span>
+          </div>
+          <div className="flex items-center justify-between text-xs border-t border-outline-variant/20 pt-2">
+            <span className="text-on-surface-variant font-bold">Total Paid</span>
+            <span className="font-extrabold text-primary">{formatPaisa(totalAmount)}</span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-on-surface-variant">Payment Method</span>
-            <span className="font-bold text-on-surface">UPI</span>
+            <span className="font-bold text-on-surface">UPI / Online</span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-on-surface-variant">Status</span>
@@ -256,18 +269,32 @@ export default function RegistrationFeePaymentPage() {
         <div className="bg-surface-container-low rounded-xl p-5 space-y-4">
           <h2 className="text-sm font-bold text-on-surface">Fee Breakdown</h2>
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-lg">verified</span>
-                <span className="text-xs text-on-surface-variant">Registration Fee</span>
+                <span className="material-symbols-outlined text-primary text-base">verified</span>
+                <span className="text-on-surface-variant">Registration Fee</span>
               </div>
-              <span className="text-sm font-bold text-on-surface">₹{registrationFee.toLocaleString("en-IN")}</span>
+              <span className="font-bold text-on-surface">{formatPaisa(baseFee)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-outline text-base">receipt_long</span>
+                <span className="text-on-surface-variant">GST (18%)</span>
+              </div>
+              <span className="font-bold text-on-surface">{formatPaisa(gstAmount)}</span>
             </div>
             <div className="border-t border-outline-variant/30 pt-3 flex items-center justify-between">
               <span className="text-sm font-bold text-on-surface">Total Payable</span>
-              <span className="text-lg font-extrabold text-primary">₹{totalAmount.toLocaleString("en-IN")}</span>
+              <span className="text-lg font-extrabold text-primary">{formatPaisa(totalAmount)}</span>
             </div>
           </div>
+        </div>
+
+        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
+          <span className="material-symbols-outlined text-sm text-amber-700 mt-0.5 shrink-0">info</span>
+          <span>
+            <strong>Refund Policy:</strong> The base registration fee of {formatPaisa(baseFee)} is 100% refundable if you do not win the auction. The 18% GST ({formatPaisa(gstAmount)}) is a government tax and is non-refundable.
+          </span>
         </div>
       </div>
 
@@ -291,7 +318,7 @@ export default function RegistrationFeePaymentPage() {
           ) : (
             <>
               <span className="material-symbols-outlined text-sm">lock</span>
-              Pay
+              Pay {formatPaisa(totalAmount)}
             </>
           )}
         </button>

@@ -22,7 +22,8 @@ export interface InvoicePdfInput {
   reference?: string;
 }
 
-const inr = (n: number) => `Rs. ${(n || 0).toLocaleString("en-IN")}`;
+const inr = (n: number) =>
+  `Rs. ${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * Builds a styled payment receipt / invoice as a PDF buffer.
@@ -168,18 +169,36 @@ export function generatePaymentInvoicePdf(input: InvoicePdfInput): Promise<Buffe
         .font("Helvetica-Bold")
         .text("AMOUNT", colAmountRight, tableTop, { align: "right" });
 
-      // ── Table row ──
-      const rowTop = tableTop + 26;
+      // ── Table rows (Itemized with 18% GST) ──
+      const totalAmount = Number(input.amount) || 0;
+      const baseFee = totalAmount > 10 ? Number((totalAmount / 1.18).toFixed(2)) : totalAmount;
+      const gstAmount = totalAmount > 10 ? Number((totalAmount - baseFee).toFixed(2)) : 0;
+
+      let rowTop = tableTop + 26;
       doc
         .fill("#191c1e")
         .fontSize(10)
         .font("Helvetica")
-        .text(input.description || "Registration Fee", colDesc, rowTop);
+        .text("Auction Registration Deposit (Refundable)", colDesc, rowTop);
       doc
         .fill("#191c1e")
         .fontSize(10)
         .font("Helvetica-Bold")
-        .text(inr(input.amount), colAmountRight, rowTop, { align: "right" });
+        .text(inr(baseFee), colAmountRight, rowTop, { align: "right" });
+
+      if (gstAmount > 0) {
+        rowTop += 22;
+        doc
+          .fill("#191c1e")
+          .fontSize(10)
+          .font("Helvetica")
+          .text("Goods & Services Tax (18% GST - Non-refundable)", colDesc, rowTop);
+        doc
+          .fill("#191c1e")
+          .fontSize(10)
+          .font("Helvetica-Bold")
+          .text(inr(gstAmount), colAmountRight, rowTop, { align: "right" });
+      }
 
       doc.moveTo(margin, rowTop + 20).lineTo(rightX, rowTop + 20).strokeColor("#dde3ea").lineWidth(1).stroke();
 
@@ -189,19 +208,19 @@ export function generatePaymentInvoicePdf(input: InvoicePdfInput): Promise<Buffe
         .fill("#191c1e")
         .fontSize(10)
         .font("Helvetica-Bold")
-        .text("Total", colDesc, totalTop);
+        .text("Total Paid", colDesc, totalTop);
       doc
         .fill("#00355f")
         .fontSize(14)
         .font("Helvetica-Bold")
-        .text(inr(input.amount), colAmountRight, totalTop - 2, { align: "right" });
+        .text(inr(totalAmount), colAmountRight, totalTop - 2, { align: "right" });
 
       doc
         .fill("#727780")
         .fontSize(8)
         .font("Helvetica")
         .text(
-          `Amount in ${(input.currency || "INR").toUpperCase()} · ${inr(input.amount)}`,
+          `Amount in ${(input.currency || "INR").toUpperCase()} · ${inr(totalAmount)} (Base deposit of ${inr(baseFee)} is refundable if not won)`,
           colDesc,
           totalTop + 22
         );

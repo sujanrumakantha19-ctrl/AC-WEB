@@ -71,22 +71,12 @@ export const POST = route(async (request: NextRequest) => {
     );
   }
 
-  const latestTopOffer = (await Offer.findOne({ auction: auctionId }).sort({ amount: -1 }).lean()) as any;
-  const topOfferAmount = latestTopOffer ? Number(latestTopOffer.amount) : 0;
-
-  const currentHighest = Math.max(
-    topOfferAmount,
-    auction.currentOffer || 0,
-    auction.startingOffer || 0,
-    auction.roundStates?.[roundIdx]?.highestOffer || 0,
-    roundIdx > 0 ? (auction.roundStates?.[roundIdx - 1]?.highestOffer || 0) : 0
-  );
-
-  if (offerAmount <= currentHighest) {
+  const minRequired = auction.startingOffer || 0;
+  if (offerAmount < minRequired) {
     return badRequest(
       isParkingSale
-        ? `Quote must be higher than the current highest quote of ₹${currentHighest.toLocaleString("en-IN")}`
-        : `Offer must be higher than the current highest offer of ₹${currentHighest.toLocaleString("en-IN")}`
+        ? `Quote must be at least the starting price of ₹${minRequired.toLocaleString("en-IN")}`
+        : `Offer must be at least the starting price of ₹${minRequired.toLocaleString("en-IN")}`
     );
   }
 
@@ -97,7 +87,9 @@ export const POST = route(async (request: NextRequest) => {
     }
   }
 
-  const previousHighestBuyer = auction.roundStates[roundIdx]?.highestBuyer;
+  const currentHighestInRound = auction.roundStates?.[roundIdx]?.highestOffer || 0;
+  const isNewHighest = offerAmount > currentHighestInRound;
+  const previousHighestBuyer = auction.roundStates?.[roundIdx]?.highestBuyer;
 
   const offer = await Offer.create({
     auction: auctionId,
@@ -105,9 +97,6 @@ export const POST = route(async (request: NextRequest) => {
     amount: offerAmount,
     round: offerRound,
   });
-
-  auction.currentOffer = offerAmount;
-  auction.totalOffers += 1;
 
   if (!auction.roundStates) {
     auction.roundStates = Array.from({ length: auction.rounds }, (_, i) => ({
@@ -117,12 +106,16 @@ export const POST = route(async (request: NextRequest) => {
     }));
   }
 
-  auction.roundStates[roundIdx].highestOffer = offerAmount;
-  auction.roundStates[roundIdx].highestBuyer = auth.userId as any;
+  if (isNewHighest) {
+    auction.currentOffer = offerAmount;
+    auction.roundStates[roundIdx].highestOffer = offerAmount;
+    auction.roundStates[roundIdx].highestBuyer = auth.userId as any;
+  }
 
+  auction.totalOffers += 1;
   await auction.save();
 
-  if (previousHighestBuyer && previousHighestBuyer.toString() !== auth.userId) {
+  if (isNewHighest && previousHighestBuyer && previousHighestBuyer.toString() !== auth.userId) {
     await Notification.create({
       user: previousHighestBuyer,
       title: "You've received a Higher Offer!",
@@ -134,14 +127,16 @@ export const POST = route(async (request: NextRequest) => {
 
   await Notification.create({
     user: auth.userId as any,
-    title: "Offer placed successfully",
-    message: `Your offer of ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} is the highest`,
+    title: isParkingSale ? "Quote placed successfully" : "Offer placed successfully",
+    message: isParkingSale
+      ? `Your quote of ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} was submitted`
+      : `Your offer of ₹${offerAmount.toLocaleString("en-IN")} on ${auction.title} (Round ${offerRound}) was submitted`,
     type: "offer",
     relatedAuction: auction._id,
   });
 
-  const populatedOffer = await Offer.findById(offer._id)
-    .populate("buyer", "name email phone avatar cusId")
+  const populatedOffer: any = await Offer.findById(offer._id)
+    .populate("buyer", "name email phone cusId")
     .populate("auction", "title lotNumber")
     .lean();
 

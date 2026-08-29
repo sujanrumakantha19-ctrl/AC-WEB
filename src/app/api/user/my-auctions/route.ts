@@ -12,7 +12,7 @@ export const GET = route(async (request: NextRequest) => {
   const userId = auth.userId;
 
   const [user, offers] = await Promise.all([
-    User.findById(userId).select("paidAccessAuctions").lean(),
+    User.findById(userId).select("paidAccessAuctions").lean() as Promise<any>,
     Offer.find({ buyer: userId }).select("auction").lean(),
   ]);
 

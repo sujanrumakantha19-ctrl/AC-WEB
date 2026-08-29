@@ -24,7 +24,7 @@ async function notifyAdmin(title: string, body: string) {
     const admin = await getAdminUser();
     if (!admin) return;
     await Notification.create({
-      user: admin._id,
+      user: (admin as any)._id,
       title,
       message: body,
       type: "system",

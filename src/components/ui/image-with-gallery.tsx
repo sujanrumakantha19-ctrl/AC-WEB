@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 interface ImageWithGalleryProps {
-  src: string;
+  src?: string | null;
   alt: string;
   images?: string[];
   className?: string;
@@ -24,22 +24,32 @@ export function ImageWithGallery({
   const [showGallery, setShowGallery] = useState(false);
   const [fullscreenImage, setFullscreenImage] = useState("");
 
-  const allImages = (images && images.length > 0 ? images : src ? [src] : []);
+  const validImages = (images || []).filter(Boolean);
+  const allImages = validImages.length > 0 ? validImages : src ? [src] : [];
+  const displaySrc = src || (allImages.length > 0 ? allImages[0] : null);
   const photoCount = allImages.length;
   const wrapperClass = className || "w-full h-full";
 
   return (
     <>
       <div className={`relative overflow-hidden ${wrapperClass}`}>
-        <img src={src} alt={alt} className={`w-full h-full object-cover ${imgClassName}`} />
+        {displaySrc ? (
+          <img src={displaySrc} alt={alt} className={`w-full h-full object-cover ${imgClassName}`} />
+        ) : (
+          <div className={`w-full h-full flex items-center justify-center bg-surface-container ${imgClassName}`}>
+            <span className="material-symbols-outlined text-outline text-3xl">directions_car</span>
+          </div>
+        )}
         {overlayChildren}
-        <button
-          onClick={() => setShowGallery(true)}
-          className="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-black/80 transition-all z-20"
-        >
-          <span className="material-symbols-outlined text-xs">photo_library</span>
-          {photoCount > 0 ? `${photoCount} Photo${photoCount !== 1 ? "s" : ""}` : "View"}
-        </button>
+        {photoCount > 0 && (
+          <button
+            onClick={() => setShowGallery(true)}
+            className="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-black/80 transition-all z-20"
+          >
+            <span className="material-symbols-outlined text-xs">photo_library</span>
+            {photoCount} Photo{photoCount !== 1 ? "s" : ""}
+          </button>
+        )}
       </div>
 
       {showGallery && (

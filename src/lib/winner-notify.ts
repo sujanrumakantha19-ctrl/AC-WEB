@@ -112,12 +112,21 @@ export async function notifyWinnerViaEmail(auction: WinnerAuction): Promise<bool
     const { winnerId } = await resolveAuctionWinner(auction);
     if (!winnerId) return false;
 
+    // Atomically claim winner notification to prevent duplicate emails under concurrent requests
+    const claim = await Auction.updateOne(
+      { _id: auction._id, winnerNotifiedAt: { $exists: false } },
+      { $set: { winnerNotifiedAt: new Date(), updatedAt: new Date() } }
+    );
+    if (claim.modifiedCount === 0) {
+      return false;
+    }
+
     const user = (await User.findById(winnerId)
       .select("name email")
       .lean()) as unknown as WinnerUser | null;
 
-    if (!user?.email) {
-      console.warn("[winner-notify] no registered email for winner", winnerId);
+    if (!user?.email || !user.email.includes("@")) {
+      console.warn("[winner-notify] no valid registered email for winner", winnerId);
       try {
         await notifyAdmins(
           "Winner not congratulated (no email)",
@@ -127,10 +136,6 @@ export async function notifyWinnerViaEmail(auction: WinnerAuction): Promise<bool
       } catch {
         // ignore
       }
-      await Auction.updateOne(
-        { _id: auction._id },
-        { $set: { winnerNotifiedAt: new Date(), updatedAt: new Date() } }
-      );
       return false;
     }
 
@@ -151,18 +156,21 @@ export async function notifyWinnerViaEmail(auction: WinnerAuction): Promise<bool
         (auction.lotNumber ? ` · Lot ${auction.lotNumber}` : "");
 
     try {
-      await sendWinnerCongratulationsEmail({
+      const sent = await sendWinnerCongratulationsEmail({
         to: user.email,
         customerName: user.name || "Customer",
         auctionName: auction.title || "Auction",
         itemDetails: itemDetails || undefined,
         winningAmount: fmtAmount(winningOffer),
         endedAt: fmtDateTime(auction.endTime),
-        isParkingSale: auction.isParkingSale,
+        saleType: auction.isParkingSale ? "Parking Sale" : "Auction",
       });
+      return sent;
     } catch (err) {
       console.error("[winner-notify] failed to email winner", auction._id, err);
+      // Unset winnerNotifiedAt on error so retry is possible
       try {
+        await Auction.updateOne({ _id: auction._id }, { $unset: { winnerNotifiedAt: 1 } });
         await notifyAdmins(
           "Winner congratulations email failed",
           `Could not email the winner (${user.name || user._id}) of "${auction.title || "N/A"}" (win ₹${fmtAmount(winningOffer)}). Reason: ${err instanceof Error ? err.message : "unknown error"}`,
@@ -173,12 +181,6 @@ export async function notifyWinnerViaEmail(auction: WinnerAuction): Promise<bool
       }
       return false;
     }
-
-    await Auction.updateOne(
-      { _id: auction._id },
-      { $set: { winnerNotifiedAt: new Date(), updatedAt: new Date() } }
-    );
-    return true;
   }
 
   return false;

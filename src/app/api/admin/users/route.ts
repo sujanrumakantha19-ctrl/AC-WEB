@@ -30,7 +30,7 @@ export const GET = route(async (request: NextRequest) => {
   // Map auctionById and userOffersMap
   const auctionById = new Map<string, any>();
   for (const a of auctions) {
-    auctionById.set(a._id.toString(), a);
+    auctionById.set(String((a as any)._id), a);
   }
 
   const userOffersMap = new Map<string, any[]>();
@@ -50,11 +50,11 @@ export const GET = route(async (request: NextRequest) => {
     try {
       const statuses = await computeRefundStatus(a);
       eligibleByAuction.set(
-        a._id.toString(),
+        String((a as any)._id),
         new Set(statuses.filter((s) => s.refundEligible).map((s) => s.buyerId))
       );
     } catch (err) {
-      console.error("[admin/users] refund eligibility failed", a._id, err);
+      console.error("[admin/users] refund eligibility failed", (a as any)._id, err);
     }
   }
 

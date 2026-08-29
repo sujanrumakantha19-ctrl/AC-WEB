@@ -107,8 +107,14 @@ export const GET = route(async (request: NextRequest) => {
       continue;
     }
 
+    if (parkingSale) {
+      if (!a.isParkingSale) continue;
+      if (!status && a.status !== "LIVE") continue;
+    } else if (status === "LIVE") {
+      if (a.isParkingSale) continue;
+    }
+
     if (!status || a.status === status) {
-      if (parkingSale && !a.isParkingSale) continue;
       matches.push(a);
     }
   }

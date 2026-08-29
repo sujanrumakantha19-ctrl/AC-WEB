@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { getServerNow, subscribeServerTime } from "@/lib/server-time";
 
 interface CountdownResult {
   days: number;
@@ -13,36 +14,32 @@ interface CountdownResult {
 }
 
 export function useCountdown(targetDate: Date | string | null | undefined): CountdownResult {
-  const [now, setNow] = useState(Date.now());
-  const serverOffsetRef = useRef(0);
-  const syncedRef = useRef(false);
+  const [serverNow, setServerNow] = useState<number>(() => getServerNow());
 
   useEffect(() => {
-    const sync = async () => {
-      const t0 = Date.now();
-      const res = await fetch("/api/time");
-      const data = await res.json();
-      const t1 = Date.now();
-      const rtt = t1 - t0;
-      const serverTime = data.timestamp + rtt / 2;
-      serverOffsetRef.current = serverTime - Date.now();
-      syncedRef.current = true;
-    };
-    sync();
-  }, []);
+    // Immediately update on mount
+    setServerNow(getServerNow());
 
-  useEffect(() => {
+    // Subscribe to server time sync events
+    const unsubscribe = subscribeServerTime(() => {
+      setServerNow(getServerNow());
+    });
+
+    // Update every second using monotonic server clock
     const interval = setInterval(() => {
-      setNow(Date.now());
+      setServerNow(getServerNow());
     }, 1000);
-    return () => clearInterval(interval);
+
+    return () => {
+      unsubscribe();
+      clearInterval(interval);
+    };
   }, []);
 
   if (!targetDate) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, hasStarted: false, hasEnded: false, display: "" };
   }
 
-  const serverNow = now + serverOffsetRef.current;
   const target = typeof targetDate === "string" ? new Date(targetDate).getTime() : new Date(targetDate).getTime();
   const diff = target - serverNow;
 

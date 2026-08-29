@@ -83,7 +83,7 @@ export default function MyAuctionsPage() {
                     <span className="font-mono text-sm font-extrabold">{a.lotNumber}</span>
                   </span>
                   <span className="text-[10px] text-on-surface-variant font-medium">
-                    {new Date(a.startTime || a.endTime).toLocaleDateString("en-IN", {
+                    {new Date(a.startTime || a.endTime || Date.now()).toLocaleDateString("en-IN", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",

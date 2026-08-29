@@ -5,10 +5,21 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useGetMeQuery } from "@/services/auth-api";
+import { useAppSelector } from "@/redux/hooks";
+import { UserAvatar } from "@/components/ui/user-avatar";
 
 export function AppHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const reduxUser = useAppSelector((s) => s.auth.user);
+  const { data, isLoading } = useGetMeQuery();
+  const user = data?.user || reduxUser;
+  const isLoggedIn = !!user;
+  const isAdmin = (user as any)?.role === "admin" || (user as any)?.role === "superadmin";
+  const dashboardUrl = isAdmin ? "/admin/dashboard" : "/user/dashboard";
+  const profileUrl = isAdmin ? "/admin/profile" : "/user/profile";
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -50,12 +61,29 @@ export function AppHeader() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <Link href="/login" className="hidden sm:inline-block">
-            <Button variant="ghost">Login</Button>
-          </Link>
-          <Link href="/register" className="hidden sm:inline-block">
-            <Button variant="primary">Register</Button>
-          </Link>
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3">
+              <Link href={dashboardUrl}>
+                <Button variant="primary" size="sm" className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">dashboard</span>
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href={profileUrl} title="My Profile" className="flex items-center gap-2 pl-2 border-l border-outline-variant/30">
+                <UserAvatar name={user?.name} image={user?.avatar} size="sm" />
+              </Link>
+            </div>
+          ) : !isLoading ? (
+            <>
+              <Link href="/login" className="hidden sm:inline-block">
+                <Button variant="ghost">Login</Button>
+              </Link>
+              <Link href="/register" className="hidden sm:inline-block">
+                <Button variant="primary">Register</Button>
+              </Link>
+            </>
+          ) : null}
+
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -83,11 +111,26 @@ export function AppHeader() {
             </Link>
           ))}
           <div className="pt-2 border-t border-outline-variant/20 flex gap-2">
-            <Link href="/login" className="w-full" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="outline" className="w-full">
-                Login
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <Link href={dashboardUrl} className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="primary" className="w-full">
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register" className="w-full" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="primary" className="w-full">
+                    Register
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

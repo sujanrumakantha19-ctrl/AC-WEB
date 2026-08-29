@@ -33,20 +33,20 @@ export default function AdminAllAuctionsPage() {
   const { data: liveCountData } = useGetAuctionsQuery({ status: "LIVE", limit: 1 });
   const { data: upcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", limit: 1 });
   const { data: parkingLiveCountData } = useGetAuctionsQuery({ status: "LIVE", parkingSale: true, limit: 1 });
-  const { data: parkingUpcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", parkingSale: true, limit: 1 });
+  const { data: allCountData } = useGetAuctionsQuery({ limit: 1 });
 
   const tabCounts = {
-    ALL: (liveCountData?.total || 0) + (upcomingCountData?.total || 0),
+    ALL: allCountData?.total || ((liveCountData?.total || 0) + (upcomingCountData?.total || 0) + (parkingLiveCountData?.total || 0)),
     LIVE: liveCountData?.total || 0,
     UPCOMING: upcomingCountData?.total || 0,
-    PARKING: (parkingLiveCountData?.total || 0) + (parkingUpcomingCountData?.total || 0),
+    PARKING: parkingLiveCountData?.total || 0,
   };
 
   const loadPage = useCallback(
     async (s: FilterStatus, p: number) => {
       const res = await getAuctions(
         s === "PARKING"
-          ? { parkingSale: true, limit: PAGE_SIZE, page: p }
+          ? { parkingSale: true, status: "LIVE", limit: PAGE_SIZE, page: p }
           : { status: s === "ALL" ? undefined : s, limit: PAGE_SIZE, page: p }
       );
       return res.data?.auctions || [];
@@ -154,7 +154,14 @@ export default function AdminAllAuctionsPage() {
               <div className="relative h-48 w-full overflow-hidden bg-black/5">
                 <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none flex flex-col items-start gap-1.5">
                   {a.isParkingSale ? (
-                    <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                    <div className="flex gap-1">
+                      <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                      {a.status === "LIVE" ? (
+                        <Badge variant="live" pulse>LIVE</Badge>
+                      ) : (
+                        <Badge variant="warning">UPCOMING</Badge>
+                      )}
+                    </div>
                   ) : (
                     <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>{a.status}</Badge>
                   )}

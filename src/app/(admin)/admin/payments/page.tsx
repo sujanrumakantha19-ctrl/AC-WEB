@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { SkeletonText } from "@/components/ui/skeleton";
-import { formatINR, getCusId } from "@/lib/utils";
+import { formatINR, formatINRPaisa, getCusId } from "@/lib/utils";
 
 type StatusTab = "ALL" | "PAID" | "REFUND_PENDING" | "REFUNDED" | "FAILED" | "PENDING";
 
@@ -145,7 +145,7 @@ export default function AdminPaymentHistoryPage() {
             <SkeletonText className="w-28 h-6" />
           ) : (
             <p className="text-2xl font-extrabold text-primary font-mono">
-              {formatINR(summary.totalCollected || 0)}
+              {formatINRPaisa(summary.totalCollected || 0)}
             </p>
           )}
           <p className="text-[10px] text-on-surface-variant font-medium">
@@ -162,7 +162,7 @@ export default function AdminPaymentHistoryPage() {
             <SkeletonText className="w-24 h-6" />
           ) : (
             <p className="text-2xl font-extrabold text-blue-800 font-mono">
-              {formatINR(summary.totalRefunded || 0)}
+              {formatINRPaisa(summary.totalRefunded || 0)}
             </p>
           )}
           <p className="text-[10px] text-on-surface-variant font-medium">
@@ -179,7 +179,7 @@ export default function AdminPaymentHistoryPage() {
             <SkeletonText className="w-28 h-6" />
           ) : (
             <p className="text-2xl font-extrabold text-emerald-900 font-mono">
-              {formatINR(summary.netRevenue || 0)}
+              {formatINRPaisa(summary.netRevenue || 0)}
             </p>
           )}
           <p className="text-[10px] text-on-surface-variant font-medium">
@@ -372,7 +372,7 @@ export default function AdminPaymentHistoryPage() {
                         {tx.paymentMethod}
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-extrabold text-primary whitespace-nowrap">
-                        {formatINR(tx.amount)}
+                        {formatINRPaisa(tx.amount)}
                       </td>
                       <td className="py-3.5 px-4 text-on-surface-variant text-[11px] whitespace-nowrap">
                         {tx.date ? new Date(tx.date).toLocaleString("en-IN", {
@@ -433,7 +433,7 @@ export default function AdminPaymentHistoryPage() {
               <div className="p-4 bg-surface-container-low rounded-2xl space-y-2 text-center">
                 <span className="text-[10px] font-bold text-outline uppercase tracking-wider block">Amount</span>
                 <p className="text-2xl font-extrabold text-primary font-mono">
-                  {formatINR(selectedTxn.amount)}
+                  {formatINRPaisa(selectedTxn.amount)}
                 </p>
                 <div className="flex justify-center">
                   {getStatusBadge(selectedTxn.status)}

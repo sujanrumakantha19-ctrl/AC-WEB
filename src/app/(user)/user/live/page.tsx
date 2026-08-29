@@ -22,7 +22,7 @@ export default function UserLiveAuctionsOverviewPage() {
     [meData]
   );
 
-  const liveCars = (auctionsData?.auctions || []).filter((a) => a.status === "LIVE");
+  const liveCars = (auctionsData?.auctions || []).filter((a) => a.status === "LIVE" && !a.isParkingSale);
   const ongoingCars = liveCars.filter(
     (car) => accessedAuctions.includes(String(car._id || car.id)) || car.hasAccess
   );
@@ -100,10 +100,7 @@ export default function UserLiveAuctionsOverviewPage() {
           </div>
 
           <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/30">
-            <div>
-              <p className="text-[10px] text-on-surface-variant mb-0.5">Starting offer price</p>
-              <p className="text-sm font-extrabold text-primary">{formatINR(a.currentOffer || a.startingOffer)}</p>
-            </div>
+            <span className="text-xs font-bold text-primary">Live Auction</span>
             <Link href={`/user/live/${id}`}>
               <button className="bg-primary text-white text-xs px-4 py-1.5 rounded-lg font-bold hover:bg-secondary transition-colors shadow-xs">
                 Place Offer

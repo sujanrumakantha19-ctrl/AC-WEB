@@ -6,6 +6,15 @@ export function formatINR(amount: number): string {
   }).format(amount);
 }
 
+export function formatINRPaisa(amount: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export function formatNumber(val: number): string {
   return new Intl.NumberFormat("en-IN").format(val);
 }

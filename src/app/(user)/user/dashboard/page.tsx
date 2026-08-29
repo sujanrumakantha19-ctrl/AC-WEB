@@ -40,14 +40,14 @@ export default function CustomerDashboardPage() {
 
   const { data: winsData, isLoading: winsLoading } = useGetWinsCountQuery();
   const { data: auctionsData, isLoading: auctionsLoading } = useGetAuctionsQuery({ limit: 20 });
-  const { data: parkingData, isLoading: parkingLoading } = useGetAuctionsQuery({ parkingSale: true, limit: 10 });
+  const { data: parkingData, isLoading: parkingLoading } = useGetAuctionsQuery({ parkingSale: true, status: "LIVE", limit: 10 });
 
   const loading = winsLoading || auctionsLoading || parkingLoading;
   const accessedAuctions = meData?.user?.paidAccessAuctions || [];
 
   const liveAuctions = auctionsData?.auctions.filter((a) => a.status === "LIVE" && !a.isParkingSale) || [];
-  const upcomingAuctions = auctionsData?.auctions.filter((a) => a.status === "UPCOMING" && !a.isParkingSale) || [];
-  const parkingAuctions = parkingData?.auctions || [];
+  const upcomingAuctions = auctionsData?.auctions.filter((a) => a.status === "UPCOMING") || [];
+  const parkingAuctions = (parkingData?.auctions || auctionsData?.auctions.filter((a) => a.isParkingSale && a.status === "LIVE") || []).filter((a) => a.isParkingSale && a.status === "LIVE");
 
   const liveCars = liveAuctions.map((a) => ({
     id: a.id || a._id,
@@ -82,6 +82,7 @@ export default function CustomerDashboardPage() {
     lotNumber: a.lotNumber,
     location: a.location,
     transmission: a.transmission,
+    isParkingSale: !!a.isParkingSale,
   }));
 
   const parkingCars = parkingAuctions.map((a) => ({
@@ -192,10 +193,7 @@ export default function CustomerDashboardPage() {
                       )}
 
                       <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/30">
-                        <div>
-                          <p className="text-[10px] text-on-surface-variant mb-0.5">Highest Quote</p>
-                          <p className="text-sm font-extrabold text-purple-700">{formatINR(car.currentOffer || car.startingOffer)}</p>
-                        </div>
+                        <span className="text-xs font-bold text-purple-700">Parking Sale Live</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); router.push(car.status === "LIVE" ? `/user/live/${car.id}` : `/user/auctions/${car.id}`); }}
                           className="bg-purple-700 text-white text-xs px-5 py-1.5 rounded-lg font-bold hover:bg-purple-800 transition-colors shadow-xs"
@@ -250,10 +248,7 @@ export default function CustomerDashboardPage() {
                       <RoundCountdown roundTimes={car.roundTimes} currentRound={car.currentRound} status={car.status} className="mt-2 text-xs" />
 
                       <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/30">
-                        <div>
-                          <p className="text-[10px] text-on-surface-variant mb-0.5">Starting offer price</p>
-                          <p className="text-sm font-extrabold text-primary">{formatINR(car.currentOffer || car.startingOffer)}</p>
-                        </div>
+                        <span className="text-xs font-bold text-primary">Live Auction</span>
                         {accessedAuctions.includes(car.id) ? (
                           <button
                             onClick={(e) => { e.stopPropagation(); router.push(`/user/live/${car.id}`); }}
@@ -303,7 +298,10 @@ export default function CustomerDashboardPage() {
                         images={car.images}
                         imgClassName="group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute top-2.5 left-2.5 z-10">
+                      <div className="absolute top-2.5 left-2.5 z-10 flex gap-1 items-center">
+                        {car.isParkingSale && (
+                          <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                        )}
                         <Badge variant="warning">UPCOMING</Badge>
                       </div>
                     </div>
@@ -320,7 +318,14 @@ export default function CustomerDashboardPage() {
                           <p className="text-[10px] text-on-surface-variant mb-0.5">Starts in</p>
                           <UpcomingCountdown startTime={car.startTime} className="text-xs text-on-surface" />
                         </div>
-                        {accessedAuctions.includes(car.id) ? (
+                        {car.isParkingSale ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); router.push(`/user/auctions/${car.id}`); }}
+                            className="bg-purple-700 text-white text-xs px-4 py-1.5 rounded-lg font-bold hover:bg-purple-800 transition-colors shadow-xs"
+                          >
+                            View
+                          </button>
+                        ) : accessedAuctions.includes(car.id) ? (
                           <button
                             disabled
                             onClick={(e) => e.stopPropagation()}

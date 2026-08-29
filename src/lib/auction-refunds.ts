@@ -6,6 +6,7 @@ import Payment from "@/models/Payment";
 import Notification from "@/models/Notification";
 import { notifyAdmins } from "@/lib/auction-notifications";
 import { refundRazorpayPayment } from "@/lib/razorpay-sync";
+import { sendRefundInitiatedEmail } from "@/lib/email";
 
 export interface RefundStatusByUser {
   buyerId: string;
@@ -208,36 +209,38 @@ export async function processAuctionRefunds(auctionId: string): Promise<{
       continue;
     }
 
-    if (!payment.paymentId) {
-      await Payment.updateOne(
-        { _id: payment._id },
-        {
-          $set: {
-            refundError: "Missing Razorpay paymentId; refund must be issued manually.",
-            updatedAt: new Date(),
-          },
-        }
-      );
-      failed += 1;
-      failedUsers.push(`${s.name || s.buyerId} (missing paymentId)`);
-      continue;
+    // Calculate refundable amount:
+    // Only the base registration fee entered by admin is refunded (18% GST is non-refundable).
+    const paidAmount = Number(payment.amount) || 0;
+    const baseFee = auction.registrationFee && auction.registrationFee > 0
+      ? Number(auction.registrationFee)
+      : (paidAmount > 10 ? Number((paidAmount / 1.18).toFixed(2)) : paidAmount);
+    const refundAmountINR = Math.min(baseFee, paidAmount);
+    const refundAmountPaise = Math.round(refundAmountINR * 100);
+
+    let refundId = "";
+
+    if (payment.paymentId) {
+      const refund = await refundRazorpayPayment(payment.paymentId, refundAmountPaise, {
+        auctionId: auction._id.toString(),
+        lotNumber: auction.lotNumber || "",
+        userId: s.buyerId,
+        cusId: s.cusId || "",
+        baseRefundAmount: String(refundAmountINR),
+      });
+      if (refund?.id) {
+        refundId = refund.id;
+      }
     }
 
-    // Only the ₹499 base registration fee is refundable (18% GST of ₹89 is non-refundable)
-    const REFUND_BASE_AMOUNT = 499;
-    const refund = await refundRazorpayPayment(payment.paymentId, REFUND_BASE_AMOUNT * 100, {
-      auctionId: auction._id.toString(),
-      lotNumber: auction.lotNumber || "",
-      userId: s.buyerId,
-      cusId: s.cusId || "",
-    });
-
-    if (!refund) {
+    if (!refundId) {
+      // If Razorpay refund initiation failed or no paymentId, log error and flag
+      console.warn("[auction-refunds] Razorpay refund initiation failed for", payment.paymentId || payment._id);
       await Payment.updateOne(
         { _id: payment._id },
         {
           $set: {
-            refundError: "Razorpay refund API failed",
+            refundError: "Razorpay refund initiation failed. Gateway returned error.",
             updatedAt: new Date(),
           },
         }
@@ -252,7 +255,7 @@ export async function processAuctionRefunds(auctionId: string): Promise<{
       {
         $set: {
           status: "REFUND_PENDING",
-          refundId: refund.id,
+          refundId,
           refundInitiatedAt: new Date(),
           updatedAt: new Date(),
         },
@@ -264,21 +267,46 @@ export async function processAuctionRefunds(auctionId: string): Promise<{
       user: s.buyerId,
       title: "Registration fee refund initiated",
       message: auction.winner
-        ? `Your registration deposit refund of ₹499 (excluding ₹89 GST) for ${auction.title} is being processed. It will be credited to your payment method once completed. (Final offer ₹${fmt(s.lastRoundOffer)})`
-        : `Your registration deposit refund of ₹499 (excluding ₹89 GST) for ${auction.title} is being processed. It will be credited to your payment method once completed.`,
+        ? `Your registration deposit refund of ₹${refundAmountINR} (excluding 18% GST) for ${auction.title} has been initiated and is being processed. It will be credited to your payment method. (Final offer ₹${fmt(s.lastRoundOffer)})`
+        : `Your registration deposit refund of ₹${refundAmountINR} (excluding 18% GST) for ${auction.title} has been initiated and is being processed. It will be credited to your payment method.`,
       type: "system",
       relatedAuction: auction._id,
     });
 
+    // Send refund initiated email to user's registered email
+    const userDoc = (await User.findById(s.buyerId).select("name email").lean()) as any;
+    if (userDoc?.email) {
+      try {
+        const emailClaim = await Payment.updateOne(
+          { _id: payment._id, refundInitiatedEmailSentAt: { $exists: false } },
+          { $set: { refundInitiatedEmailSentAt: new Date() } }
+        );
+        if (emailClaim.modifiedCount > 0) {
+          await sendRefundInitiatedEmail({
+            to: userDoc.email,
+            customerName: userDoc.name || s.name || "Customer",
+            auctionTitle: auction.title || "Vehicle Auction",
+            amount: `₹${refundAmountINR}`,
+            refundId,
+            date: new Date().toLocaleString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            }),
+          });
+        }
+      } catch (emailErr) {
+        console.error("[refund-initiated] failed to email refund initiated notice", userDoc.email, emailErr);
+      }
+    }
+
     refunded += 1;
-    refundedAmount += REFUND_BASE_AMOUNT;
+    refundedAmount += refundAmountINR;
   }
 
   const allSucceeded = failed === 0;
-  if (allSucceeded) {
-    auction.refundsProcessed = true;
-    await auction.save();
-  }
+  auction.refundsProcessed = true;
+  await auction.save();
 
   await notifyAdmins(
     allSucceeded ? "Refunds initiated" : "Refund initiation partially failed",

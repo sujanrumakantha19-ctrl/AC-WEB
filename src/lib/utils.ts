@@ -1,4 +1,4 @@
-export { formatINR, formatNumber } from "./format";
+export { formatINR, formatINRPaisa, formatNumber } from "./format";
 
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");

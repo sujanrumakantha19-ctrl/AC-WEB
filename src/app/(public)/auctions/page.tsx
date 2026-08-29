@@ -18,8 +18,8 @@ export default function PublicAuctionsPage() {
 
   const filteredAuctions = auctions.filter((a: SerializedAuction) => {
     if (filter === "LIVE") return a.status === "LIVE" && !a.isParkingSale;
-    if (filter === "PARKING") return a.isParkingSale;
-    if (filter === "UPCOMING") return a.status === "UPCOMING" && !a.isParkingSale;
+    if (filter === "PARKING") return a.isParkingSale && a.status === "LIVE";
+    if (filter === "UPCOMING") return a.status === "UPCOMING";
     return true;
   });
 
@@ -72,7 +72,14 @@ export default function PublicAuctionsPage() {
               <div className="relative h-48 w-full overflow-hidden bg-black/5">
                 <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex justify-between items-center pointer-events-none">
                   {a.isParkingSale ? (
-                    <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                      {a.status === "LIVE" ? (
+                        <Badge variant="live" pulse>LIVE</Badge>
+                      ) : (
+                        <Badge variant="warning">UPCOMING</Badge>
+                      )}
+                    </div>
                   ) : (
                     <Badge variant={a.status === "LIVE" ? "live" : a.status === "UPCOMING" ? "warning" : "secondary"} pulse={a.status === "LIVE"}>
                       {a.status === "LIVE" ? `LIVE` : a.status}

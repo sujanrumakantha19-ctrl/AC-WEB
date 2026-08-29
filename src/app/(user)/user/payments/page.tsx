@@ -213,7 +213,7 @@ export default function UserPaymentHistoryPage() {
                       <div className="flex items-center gap-1">
                         <span className="text-on-surface-variant">Amount:</span>
                         <span className="font-extrabold text-on-surface">
-                          ₹{(payment.amount || 0).toLocaleString("en-IN")}
+                          ₹{(payment.amount || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       {payment.orderId && (
@@ -236,7 +236,45 @@ export default function UserPaymentHistoryPage() {
                           </span>
                         </div>
                       )}
+                      {payment.refundId && (
+                        <div className="flex items-center gap-1 text-amber-800">
+                          <span className="text-on-surface-variant">
+                            Refund ID:
+                          </span>
+                          <span className="font-mono font-bold">
+                            {payment.refundId.slice(-14)}
+                          </span>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Refund info note */}
+                    {payment.status === "REFUND_PENDING" && (() => {
+                      const paid = Number(payment.amount) || 0;
+                      const base = paid > 10 ? (paid / 1.18).toFixed(2) : paid.toFixed(2);
+                      const gst = paid > 10 ? (paid - Number(base)).toFixed(2) : "0.00";
+                      return (
+                        <div className="mt-2.5 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-900 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm text-amber-700 shrink-0">hourglass_top</span>
+                          <span>
+                            <strong>Refund Initiated:</strong> Base registration deposit of ₹{base} is being processed by the bank. Once credited to your account, status will change to Refunded. (18% GST ₹{gst} is non-refundable).
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                    {payment.status === "REFUNDED" && (() => {
+                      const paid = Number(payment.amount) || 0;
+                      const base = paid > 10 ? (paid / 1.18).toFixed(2) : paid.toFixed(2);
+                      return (
+                        <div className="mt-2.5 p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-900 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm text-blue-700 shrink-0">check_circle</span>
+                          <span>
+                            <strong>Refund Credited:</strong> Base registration deposit of ₹{base} has been confirmed credited to your payment method by Razorpay.
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* Failure reason */}
                     {payment.failureReason && (

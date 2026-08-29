@@ -24,7 +24,7 @@ export default function AdminExecutiveDashboardPage() {
     (u) => u.createdAt && new Date(u.createdAt) >= monthStart
   );
 
-  const liveCount = allAuctions.filter((a) => a.status === "LIVE").length;
+  const liveCount = allAuctions.filter((a) => a.status === "LIVE" && !a.isParkingSale).length;
   const upcomingCount = allAuctions.filter((a) => a.status === "UPCOMING").length;
   const endedCount = allAuctions.filter((a) => a.status === "ENDED").length;
   const metrics = {

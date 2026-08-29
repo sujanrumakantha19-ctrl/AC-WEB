@@ -11,6 +11,7 @@ import { useGetAuctionQuery, useUpdateAuctionMutation, useRoundControlMutation, 
 import { useGetOffersQuery } from "@/services/offers-api";
 import { useAuctionLive } from "@/hooks/use-auction-live";
 import { ParticipantsPopup } from "@/components/pages/participants-popup";
+import { getServerNow } from "@/lib/server-time";
 import type { RoundState, Offer } from "@/types";
 
 const buyerOf = (offer: Offer) => (typeof offer.buyer === "object" ? offer.buyer : undefined);
@@ -97,7 +98,7 @@ export default function AdminLiveControlRoomPage() {
 
   const openEditTimes = () => {
     if (!auction?.roundTimes?.length) return;
-    setEditRoundTimes(auction.roundTimes.map((rt) => ({ start: rt.start || "", end: rt.end || "" })));
+    setEditRoundTimes(auction.roundTimes.map((rt: any) => ({ start: rt.start || "", end: rt.end || "" })));
     setEditingTimes(true);
     document.getElementById("round-cards-section")?.scrollIntoView({ behavior: "smooth" });
   };
@@ -122,9 +123,16 @@ export default function AdminLiveControlRoomPage() {
     );
   }
 
+  const isEnded = !auction ? false : auction.status === "ENDED" || (
+    !auction.isParkingSale &&
+    Boolean(auction.roundTimes?.length) &&
+    new Date(auction.roundTimes?.[auction.roundTimes.length - 1]?.end || auction.endTime || 0).getTime() <= getServerNow()
+  );
+  const isLive = !isEnded && auction.status === "LIVE";
+
   const currentRoundData = roundStates[currentRound - 1];
-  const isActive = currentRoundData?.status === "active";
-  const isPaused = currentRoundData?.status === "paused";
+  const isActive = isLive && currentRoundData?.status === "active";
+  const isPaused = isLive && currentRoundData?.status === "paused";
 
   const timelineOffers = offers
     .filter((o) => timelineRound === null || o.round === timelineRound)
@@ -139,11 +147,11 @@ export default function AdminLiveControlRoomPage() {
             Back
           </Link>
           <h1 className="text-lg font-extrabold text-on-surface truncate">{auction.title}</h1>
-          {auction.status === "ENDED" && (
+          {isEnded && (
             <span className="text-xs text-error font-bold shrink-0">🏁 ENDED</span>
           )}
         </div>
-        {auction.status !== "ENDED" && (
+        {!isEnded && (
           <Link href={`/admin/auctions/${id}/edit?from=/admin/auctions/live/${id}`}>
             <button className="px-3.5 py-1.5 bg-white border border-outline-variant/40 hover:border-primary hover:text-primary text-on-surface-variant font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5 shrink-0">
               <span className="material-symbols-outlined text-sm">edit</span>
@@ -157,7 +165,13 @@ export default function AdminLiveControlRoomPage() {
         <div className="md:w-96 shrink-0 flex flex-col">
           <div className="relative h-56 md:h-64 overflow-hidden bg-black/5">
             <div className="absolute top-2.5 left-2.5 z-10">
-              {auction.status === "LIVE" && <Badge variant="live" pulse>LIVE</Badge>}
+              {isEnded ? (
+                <Badge variant="secondary">ENDED</Badge>
+              ) : isLive ? (
+                <Badge variant="live" pulse>LIVE</Badge>
+              ) : (
+                <Badge variant="warning">UPCOMING</Badge>
+              )}
             </div>
             <ImageWithGallery
               src={auction.image || ""}
@@ -399,71 +413,68 @@ export default function AdminLiveControlRoomPage() {
 
             <div className="flex flex-wrap justify-between items-center gap-4 mt-3">
               <div className="flex flex-wrap gap-2">
-                {auction.isParkingSale ? (
+                {isEnded ? (
+                  <div className="flex items-center gap-2 py-1">
+                    <span className="px-4 py-2 bg-surface-container text-on-surface-variant rounded-lg text-xs font-bold flex items-center gap-1.5 border border-outline-variant/30">
+                      <span className="material-symbols-outlined text-sm text-emerald-600">check_circle</span>
+                      Auction Completed
+                    </span>
+                  </div>
+                ) : auction.isParkingSale ? (
                   <>
-                    {auction.status !== "ENDED" && (
-                      <button onClick={() => handleAction("end")} disabled={loading}
-                        className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
-                        ⏹ End Parking Sale
-                      </button>
-                    )}
-                    {auction.status !== "ENDED" && (
-                      <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
-                        className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
-                        🛑 Cancel
-                      </button>
-                    )}
+                    <button onClick={() => handleAction("end")} disabled={loading}
+                      className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                      ⏹ End Parking Sale
+                    </button>
+                    <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
+                      className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
+                      🛑 Cancel
+                    </button>
                   </>
                 ) : (
                   <>
-                {auction.status !== "ENDED" && !isActive && !isPaused && (
-                  <button onClick={() => handleAction("start")} disabled={loading}
-                    className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 disabled:opacity-50">
-                    ▶ Start Round {currentRound}
-                  </button>
-                )}
-                {isActive && (
-                  <>
-                    <button onClick={() => handleAction("pause")} disabled={loading}
-                      className="px-5 py-2.5 bg-amber-500 text-black rounded-lg text-xs font-bold hover:bg-amber-400 disabled:opacity-50">
-                      ⏸ Pause
-                    </button>
-                    <button onClick={() => handleAction("end")} disabled={loading}
-                      className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
-                      ⏹ End Round
-                    </button>
-                    <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
-                      className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
-                      🛑 Cancel
-                    </button>
-                  </>
-                )}
-                {isPaused && (
-                  <>
-                    <button onClick={() => handleAction("resume")} disabled={loading}
-                      className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 disabled:opacity-50">
-                      ▶ Resume
-                    </button>
-                    <button onClick={() => handleAction("end")} disabled={loading}
-                      className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
-                      ⏹ End Round
-                    </button>
-                    <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
-                      className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
-                      🛑 Cancel
-                    </button>
-                  </>
-                )}
-                {auction.status !== "ENDED" && !isActive && !isPaused && (
-                  <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
-                    className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
-                    🛑 Cancel
-                  </button>
-                )}
+                    {!isActive && !isPaused && (
+                      <button onClick={() => handleAction("start")} disabled={loading}
+                        className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 disabled:opacity-50">
+                        ▶ Start Round {currentRound}
+                      </button>
+                    )}
+                    {isActive && (
+                      <>
+                        <button onClick={() => handleAction("pause")} disabled={loading}
+                          className="px-5 py-2.5 bg-amber-500 text-black rounded-lg text-xs font-bold hover:bg-amber-400 disabled:opacity-50">
+                          ⏸ Pause
+                        </button>
+                        <button onClick={() => handleAction("end")} disabled={loading}
+                          className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                          ⏹ End Round
+                        </button>
+                        <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
+                          className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
+                          🛑 Cancel
+                        </button>
+                      </>
+                    )}
+                    {isPaused && (
+                      <>
+                        <button onClick={() => handleAction("resume")} disabled={loading}
+                          className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 disabled:opacity-50">
+                          ▶ Resume
+                        </button>
+                        <button onClick={() => handleAction("end")} disabled={loading}
+                          className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                          ⏹ End Round
+                        </button>
+                        <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
+                          className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
+                          🛑 Cancel
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
-              {!auction.isParkingSale && auction.status !== "ENDED" && currentRoundData?.status !== "completed" && (
+              {!auction.isParkingSale && !isEnded && currentRoundData?.status !== "completed" && (
                 <div className="flex gap-2 w-[180px] justify-end">
                   {editingTimes ? (
                     <>

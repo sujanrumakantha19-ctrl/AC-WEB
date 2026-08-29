@@ -13,7 +13,7 @@ export const GET = route(async (request: NextRequest) => {
 
   return ok({
     success: true,
-    groups: groups.map((g) => ({
+    groups: groups.map((g: any) => ({
       id: String(g._id),
       name: g.name,
       link: g.link,

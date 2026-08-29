@@ -12,7 +12,7 @@ import type { SerializedAuction } from "@/types";
 
 export default function AdminLivePage() {
   const { data, isLoading } = useGetAuctionsQuery({ status: "LIVE", limit: 20 });
-  const liveAuctions = data?.auctions || [];
+  const liveAuctions = (data?.auctions || []).filter((a) => a.status === "LIVE" && !a.isParkingSale);
 
   return (
     <div className="space-y-6">

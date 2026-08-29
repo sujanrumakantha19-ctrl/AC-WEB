@@ -10,6 +10,7 @@ import { UpcomingCountdown } from "@/components/ui/upcoming-countdown";
 import { AuctionGridSkeleton } from "@/components/ui/skeleton";
 import { useLazyGetAuctionsQuery, useGetAuctionsQuery } from "@/services/auctions-api";
 import { useGetMeQuery } from "@/services/auth-api";
+import { getServerNow } from "@/lib/server-time";
 
 const PAGE_SIZE = 12;
 
@@ -28,11 +29,12 @@ export default function UserAuctionsPage() {
   const [getAuctions] = useLazyGetAuctionsQuery();
   const { data: liveCountData } = useGetAuctionsQuery({ status: "LIVE", limit: 1 });
   const { data: upcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", limit: 1 });
-  const { data: parkingCountData } = useGetAuctionsQuery({ parkingSale: true, limit: 1 });
+  const { data: parkingCountData } = useGetAuctionsQuery({ parkingSale: true, status: "LIVE", limit: 1 });
+  const { data: allCountData } = useGetAuctionsQuery({ limit: 1 });
   const { data: meData } = useGetMeQuery();
 
   const tabCounts: Record<Tab, number> = {
-    all: (liveCountData?.total || 0) + (upcomingCountData?.total || 0),
+    all: allCountData?.total || ((liveCountData?.total || 0) + (upcomingCountData?.total || 0) + (parkingCountData?.total || 0)),
     live: liveCountData?.total || 0,
     parking: parkingCountData?.total || 0,
     upcoming: upcomingCountData?.total || 0,
@@ -52,7 +54,7 @@ export default function UserAuctionsPage() {
     async (t: Tab, p: number) => {
       const res = await getAuctions(
         t === "parking"
-          ? { parkingSale: true, limit: PAGE_SIZE, page: p }
+          ? { parkingSale: true, status: "LIVE", limit: PAGE_SIZE, page: p }
           : t === "all"
           ? { limit: PAGE_SIZE, page: p }
           : { status: t.toUpperCase(), limit: PAGE_SIZE, page: p }
@@ -116,7 +118,12 @@ export default function UserAuctionsPage() {
 
   const renderCard = (a: any) => {
     const id = a._id || a.id;
-    const isLive = tab === "live";
+    const isEnded = a.status === "ENDED" || (
+      !a.isParkingSale &&
+      Boolean(a.roundTimes?.length) &&
+      new Date(a.roundTimes[a.roundTimes.length - 1]?.end || a.endTime || 0).getTime() <= getServerNow()
+    );
+    const isLive = !isEnded && a.status === "LIVE";
     const registered = accessedAuctions.includes(String(id)) || !!a.hasAccess;
     return (
       <div
@@ -135,12 +142,21 @@ export default function UserAuctionsPage() {
             images={a.images}
             imgClassName="group-hover:scale-105 transition-transform duration-500"
           />
-          <div className="absolute top-2.5 left-2.5 z-10 flex gap-1 items-center">
+          <div className="absolute top-2.5 left-2.5 z-10 flex gap-1.5 items-center">
             {a.isParkingSale ? (
-              <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+              <>
+                <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">PARKING SALE</Badge>
+                {isEnded ? (
+                  <Badge variant="secondary">ENDED</Badge>
+                ) : isLive ? (
+                  <Badge variant="live" pulse>LIVE</Badge>
+                ) : (
+                  <Badge variant="warning">UPCOMING</Badge>
+                )}
+              </>
             ) : (
-              <Badge variant={isLive ? "live" : "warning"} pulse={isLive}>
-                {isLive ? "LIVE" : "UPCOMING"}
+              <Badge variant={isEnded ? "secondary" : isLive ? "live" : "warning"} pulse={isLive}>
+                {isEnded ? "ENDED" : isLive ? "LIVE" : "UPCOMING"}
               </Badge>
             )}
           </div>
@@ -189,25 +205,44 @@ export default function UserAuctionsPage() {
           </div>
 
           <div className="flex items-center justify-between pt-3 mt-3 border-t border-outline-variant/30">
-            {a.isParkingSale ? (
+            {isEnded ? (
               <>
-                <div>
-                  <p className="text-[10px] text-on-surface-variant mb-0.5">Highest Quote</p>
-                  <p className="text-sm font-extrabold text-purple-700">{formatINR(a.currentOffer || a.startingOffer)}</p>
-                </div>
+                <span className="text-xs font-bold text-on-surface-variant">Auction Ended</span>
                 <button
-                  onClick={(e) => { e.stopPropagation(); router.push(a.status === "LIVE" ? `/user/live/${id}` : `/user/auctions/${id}`); }}
-                  className="bg-purple-700 text-white text-xs px-5 py-1.5 rounded-lg font-bold hover:bg-purple-800 transition-colors shadow-xs"
+                  onClick={(e) => { e.stopPropagation(); router.push(`/user/auctions/${id}`); }}
+                  className="bg-surface-container-high text-on-surface-variant text-xs px-4 py-1.5 rounded-lg font-bold hover:bg-surface-container transition-colors"
                 >
-                  Free
+                  View
                 </button>
               </>
+            ) : a.isParkingSale ? (
+              a.status === "LIVE" ? (
+                <>
+                  <span className="text-xs font-bold text-purple-700">Parking Sale Live</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); router.push(`/user/live/${id}`); }}
+                    className="bg-purple-700 text-white text-xs px-5 py-1.5 rounded-lg font-bold hover:bg-purple-800 transition-colors shadow-xs"
+                  >
+                    Free
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-[10px] text-on-surface-variant mb-0.5">Starts in</p>
+                    <UpcomingCountdown startTime={a.startTime} className="text-xs text-on-surface" />
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); router.push(`/user/auctions/${id}`); }}
+                    className="bg-purple-700 text-white text-xs px-5 py-1.5 rounded-lg font-bold hover:bg-purple-800 transition-colors shadow-xs"
+                  >
+                    View
+                  </button>
+                </>
+              )
             ) : isLive ? (
               <>
-                <div>
-                  <p className="text-[10px] text-on-surface-variant mb-0.5">Starting offer price</p>
-                  <p className="text-sm font-extrabold text-primary">{formatINR(a.currentOffer || a.startingOffer)}</p>
-                </div>
+                <span className="text-xs font-bold text-primary">Live Auction</span>
                 {registered ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); router.push(`/user/live/${id}`); }}

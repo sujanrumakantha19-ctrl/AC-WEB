@@ -27,16 +27,7 @@ export const GET = route<{ id: string }>(async (request: NextRequest, { params }
   const roundIdx = currentRound - 1;
   const isParkingSale = !!auction.isParkingSale;
 
-  const latestTopOffer = (await Offer.findOne({ auction: id }).sort({ amount: -1 }).lean()) as any;
-  const topOfferAmount = latestTopOffer ? Number(latestTopOffer.amount) : 0;
-
-  const basePrice = Math.max(
-    topOfferAmount,
-    auction.currentOffer || 0,
-    auction.startingOffer || 0,
-    auction.roundStates?.[roundIdx]?.highestOffer || 0,
-    roundIdx > 0 ? (auction.roundStates?.[roundIdx - 1]?.highestOffer || 0) : 0
-  );
+  const basePrice = auction.startingOffer || 0;
 
   let userHasOfferThisRound = false;
   let userLastOffer: { amount: number; createdAt: string } | null = null;
