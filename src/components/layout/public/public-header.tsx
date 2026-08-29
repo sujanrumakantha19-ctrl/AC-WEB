@@ -25,9 +25,9 @@ export function PublicHeader() {
     <header className="fixed top-0 z-50 w-full h-20 bg-white/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-xs">
       <div className="flex justify-between items-center w-full px-4 md:px-8 max-w-container-max mx-auto h-full">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="VKS Autoservices" width={512} height={512} className="h-9 w-9 object-contain" priority />
-          <span className="text-xl font-extrabold text-primary tracking-tight">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Image src="/logo.png" alt="VKS Autoservices" width={512} height={512} className="h-7 w-7 sm:h-9 sm:w-9 object-contain shrink-0" priority />
+          <span className="text-sm sm:text-xl font-extrabold text-primary tracking-tight whitespace-nowrap">
             VKS AUTOSERVICES
           </span>
         </Link>
@@ -53,13 +53,16 @@ export function PublicHeader() {
         </nav>
 
         {/* Authentication CTAs or Logged-in Dashboard Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isLoggedIn ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link href={dashboardUrl}>
-                <button className="px-4 py-2 bg-primary hover:bg-secondary text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-sm">dashboard</span>
-                  Dashboard
+                <button
+                  title="Dashboard"
+                  className="px-2.5 py-2 sm:px-4 sm:py-2 bg-primary hover:bg-secondary text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-base sm:text-sm">dashboard</span>
+                  <span className="hidden sm:inline">Dashboard</span>
                 </button>
               </Link>
               <Link

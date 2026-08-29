@@ -32,9 +32,9 @@ export function AppHeader() {
     <header className="fixed top-0 z-50 w-full h-20 bg-surface/80 glass-nav border-b border-outline-variant/30 shadow-sm">
       <div className="flex justify-between items-center w-full px-4 md:px-margin-desktop max-w-container-max mx-auto h-full">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="VKS Autoservices" width={512} height={512} className="h-9 w-9 object-contain" priority />
-          <span className="text-xl md:text-headline-md font-headline-md font-extrabold text-primary tracking-tight">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Image src="/logo.png" alt="VKS Autoservices" width={512} height={512} className="h-7 w-7 sm:h-9 sm:w-9 object-contain shrink-0" priority />
+          <span className="text-sm sm:text-xl font-extrabold text-primary tracking-tight whitespace-nowrap">
             VKS AUTOSERVICES
           </span>
         </Link>
@@ -60,13 +60,13 @@ export function AppHeader() {
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isLoggedIn ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link href={dashboardUrl}>
-                <Button variant="primary" size="sm" className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm">dashboard</span>
-                  Dashboard
+                <Button variant="primary" size="sm" className="flex items-center gap-1 px-2.5 sm:px-3" title="Dashboard">
+                  <span className="material-symbols-outlined text-base sm:text-sm">dashboard</span>
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Button>
               </Link>
               <Link href={profileUrl} title="My Profile" className="flex items-center gap-2 pl-2 border-l border-outline-variant/30">
