@@ -96,18 +96,7 @@ export default function AboutUsPage() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-3 border-t border-outline-variant/20">
-          <div>
-            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">GST Number</p>
-            <p className="font-mono text-on-surface-variant">33HCBPS1839H1ZH</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Website</p>
-            <a href="https://www.vksautoservices.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-              www.vksautoservices.org
-            </a>
-          </div>
-        </div>
+
       </section>
 
       {/* Why Choose Us */}
