@@ -97,33 +97,15 @@ export default function AboutUsPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-3 border-t border-outline-variant/20">
-          <div className="space-y-3">
-            <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">GST Number</p>
-              <p className="font-mono text-on-surface-variant">33HCBPS1839H1ZH</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Udyam Reg Number</p>
-              <p className="font-mono text-on-surface-variant">UDYAM-TN-12-0105650</p>
-            </div>
+          <div>
+            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">GST Number</p>
+            <p className="font-mono text-on-surface-variant">33HCBPS1839H1ZH</p>
           </div>
-          <div className="space-y-3">
-            <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Email</p>
-              <a href="mailto:owner@vksautosettleeauctions.com" className="text-primary hover:underline">
-                owner@vksautosettleeauctions.com
-              </a>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">WhatsApp Number</p>
-              <a href="https://wa.me/919597177351" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">95971 77351</a>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Website</p>
-              <a href="https://www.vksautoservices.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                www.vksautoservices.org
-              </a>
-            </div>
+          <div>
+            <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Website</p>
+            <a href="https://www.vksautoservices.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              www.vksautoservices.org
+            </a>
           </div>
         </div>
       </section>
