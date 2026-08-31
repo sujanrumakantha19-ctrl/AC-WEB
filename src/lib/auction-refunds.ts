@@ -15,6 +15,9 @@ export interface RefundStatusByUser {
   phone?: string;
   email?: string;
   lastRoundOffer: number;
+  highestOffer?: number;
+  hasQuoted?: boolean;
+  isWithin1Percent?: boolean;
   inTop50: boolean;
   refundEligible: boolean;
   refunded: boolean;
@@ -25,93 +28,151 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("en-IN");
 /**
  * Computes the refund status for every participant of an ENDED auction.
  *
- * With a winner (normal end):
- *  1. Only the last round's offer submitters participate in the evaluation.
- *  2. The winner is excluded (winners do not get a refund).
- *  3. Only the top 50% of offer submitters (by last-round offer amount, desc) are
- *     considered eligible for a refund.
- *  4. Within that top 50%, a refund is issued only if the customer's last-round
- *     offer is at least 1% of the winner's final offer price.
- *
- * Without a winner (cancelled / no offers in the final round):
- *  every paid participant is eligible for a full registration-fee refund.
+ * Rules:
+ *  1. Winners do not receive a registration fee refund.
+ *  2. Users who paid the registration fee but never placed any quote receive NO refund.
+ *  3. Non-winning users who placed a quote must have their quote within 1% of the winning offer
+ *     (i.e. winningOffer - userQuote <= 0.01 * winningOffer).
+ *  4. If multiple/all users quote within 1%, only the top 50% highest quoters among them
+ *     receive the refund (sorted by highest quote descending).
+ *  5. For unsold/cancelled auctions with no bids, all paid participants are refunded.
  */
 export async function computeRefundStatus(
   auction: any,
   isAlreadyProcessed = false
 ): Promise<RefundStatusByUser[]> {
-  const winningOffer = Number(auction.winningOffer || 0);
-  const winnerId = auction.winner?.toString?.() || String(auction.winner || "");
+  let winnerId = auction.winner?.toString?.() || (auction.winner ? String(auction.winner._id || auction.winner) : "");
+  let winningOffer = Number(auction.winningOffer || 0);
 
-  let list: any[] = [];
-
-  if (winnerId) {
-    const lastRound = auction.rounds || auction.roundStates?.length || 1;
-    const offers = await Offer.find({ auction: auction._id, round: lastRound })
-      .populate("buyer", "name cusId phone email")
-      .lean();
-
-    const byUser = new Map<string, any>();
-    for (const o of offers) {
-      const buyer = o.buyer as any;
-      if (!buyer || typeof buyer !== "object") continue;
-      const id = buyer._id?.toString?.();
-      if (!id) continue;
-      const prev = byUser.get(id);
-      const amount = Number(o.amount) || 0;
-      if (!prev || amount > prev.lastRoundOffer) {
-        byUser.set(id, {
-          buyerId: id,
-          lastRoundOffer: amount,
-          name: buyer.name,
-          cusId: buyer.cusId,
-          phone: buyer.phone,
-          email: buyer.email,
-        });
-      }
+  // If winner is not explicitly saved on auction document, look up the highest offer across the auction
+  if (!winnerId || winningOffer === 0) {
+    const topOffer = (await Offer.findOne({ auction: auction._id }).sort({ amount: -1 }).lean()) as any;
+    if (topOffer && topOffer.amount > 0) {
+      winnerId = String(topOffer.buyer?._id || topOffer.buyer || "");
+      winningOffer = Number(topOffer.amount);
     }
+  }
 
-    list = Array.from(byUser.values())
-      .filter((u) => u.buyerId !== winnerId)
-      .sort((a, b) => b.lastRoundOffer - a.lastRoundOffer);
+  // Fetch all payments made for this auction (PAID / REFUND_PENDING / REFUNDED)
+  const paidPayments = await Payment.find({
+    auction: auction._id,
+    status: { $in: ["PAID", "REFUND_PENDING", "REFUNDED"] },
+  })
+    .populate("user", "name cusId phone email")
+    .lean();
 
-    const topCount = Math.round(list.length * 0.5);
-    list.forEach((u, i) => {
-      u.inTop50 = i < topCount;
-    });
-
-    const threshold = winningOffer * 0.01;
-    for (const u of list) {
-      u.refundEligible = u.inTop50 && threshold > 0 ? u.lastRoundOffer >= threshold : false;
-      u.refunded = false;
-    }
-  } else {
-    const paidPayments = await Payment.find({ auction: auction._id, status: { $in: ["PAID", "REFUND_PENDING", "REFUNDED"] } })
-      .populate("user", "name cusId phone email")
-      .lean();
-    const seen = new Set<string>();
-    for (const p of paidPayments) {
-      const user = p.user as any;
-      if (!user || typeof user !== "object") continue;
-      const id = user._id?.toString?.();
-      if (!id || seen.has(id)) continue;
-      seen.add(id);
-      list.push({
-        buyerId: id,
-        lastRoundOffer: 0,
+  const paidUsersMap = new Map<string, any>();
+  for (const p of paidPayments) {
+    const user = p.user as any;
+    if (!user || typeof user !== "object") continue;
+    const uid = user._id?.toString?.();
+    if (!uid) continue;
+    if (!paidUsersMap.has(uid)) {
+      paidUsersMap.set(uid, {
+        buyerId: uid,
         name: user.name,
         cusId: user.cusId,
         phone: user.phone,
         email: user.email,
-        inTop50: true,
-        refundEligible: true,
-        refunded: false,
+        quotes: [] as number[],
+        highestOffer: 0,
+        lastRoundOffer: 0,
       });
     }
   }
 
-  if (isAlreadyProcessed && list.length > 0) {
-    const users = await User.find({ _id: { $in: list.map((u) => u.buyerId) } })
+  // Fetch all offers for this auction
+  const allOffers = await Offer.find({ auction: auction._id })
+    .populate("buyer", "name cusId phone email")
+    .lean();
+
+  const lastRoundNum = auction.rounds || auction.roundStates?.length || 1;
+
+  for (const o of allOffers) {
+    const buyer = o.buyer as any;
+    if (!buyer || typeof buyer !== "object") continue;
+    const uid = buyer._id?.toString?.();
+    if (!uid) continue;
+
+    const amount = Number(o.amount) || 0;
+    const isLastRound = Number(o.round) === Number(lastRoundNum);
+
+    let participant = paidUsersMap.get(uid);
+    if (!participant) {
+      participant = {
+        buyerId: uid,
+        name: buyer.name,
+        cusId: buyer.cusId,
+        phone: buyer.phone,
+        email: buyer.email,
+        quotes: [],
+        highestOffer: 0,
+        lastRoundOffer: 0,
+      };
+      paidUsersMap.set(uid, participant);
+    }
+
+    participant.quotes.push(amount);
+    if (amount > participant.highestOffer) {
+      participant.highestOffer = amount;
+    }
+    if (isLastRound && amount > participant.lastRoundOffer) {
+      participant.lastRoundOffer = amount;
+    }
+  }
+
+  const allParticipants = Array.from(paidUsersMap.values());
+
+  if (winnerId && winningOffer > 0) {
+    const nonWinners = allParticipants.filter((p) => p.buyerId !== winnerId);
+
+    // Filter users who quoted vs users who never quoted
+    const quotingNonWinners = nonWinners.filter((p) => p.highestOffer > 0);
+    const nonQuotingNonWinners = nonWinners.filter((p) => p.highestOffer === 0);
+
+    // Sort quoting users by highest quote descending
+    quotingNonWinners.sort((a, b) => b.highestOffer - a.highestOffer);
+
+    // 1% margin of the winning offer
+    const margin1Percent = winningOffer * 0.01;
+
+    // Top 50% cap of quoting participants
+    const top50Count = Math.max(1, Math.round(quotingNonWinners.length * 0.5));
+
+    quotingNonWinners.forEach((u, index) => {
+      const diffFromWinning = winningOffer - u.highestOffer;
+      // Quote is within 1% of final winning amount
+      const isWithin1Percent = diffFromWinning >= 0 && diffFromWinning <= margin1Percent;
+      const inTop50 = index < top50Count;
+
+      u.inTop50 = inTop50;
+      u.hasQuoted = true;
+      u.isWithin1Percent = isWithin1Percent;
+      // Eligible ONLY if quoted within 1% AND in the top 50% of quoting users
+      u.refundEligible = isWithin1Percent && inTop50;
+      u.refunded = false;
+    });
+
+    nonQuotingNonWinners.forEach((u) => {
+      u.inTop50 = false;
+      u.hasQuoted = false;
+      u.isWithin1Percent = false;
+      u.refundEligible = false; // No quote = No refund
+      u.refunded = false;
+    });
+  } else {
+    // Unsold or cancelled auction without any bids: all paid participants are refunded
+    for (const u of allParticipants) {
+      u.inTop50 = true;
+      u.hasQuoted = false;
+      u.isWithin1Percent = false;
+      u.refundEligible = true;
+      u.refunded = false;
+    }
+  }
+
+  if (isAlreadyProcessed && allParticipants.length > 0) {
+    const users = await User.find({ _id: { $in: allParticipants.map((u) => u.buyerId) } })
       .select("_id refundedAuctions")
       .lean();
     const refundSet = new Map<string, Set<string>>();
@@ -121,22 +182,25 @@ export async function computeRefundStatus(
         new Set((u.refundedAuctions || []).map((r: any) => r.toString()))
       );
     }
-    for (const u of list) {
+    for (const u of allParticipants) {
       u.refunded = !!refundSet.get(u.buyerId)?.has(String(auction._id));
     }
   }
 
-  return list.map(
+  return allParticipants.map(
     (u): RefundStatusByUser => ({
       buyerId: u.buyerId,
       name: u.name,
       cusId: u.cusId,
       phone: u.phone,
       email: u.email,
-      lastRoundOffer: u.lastRoundOffer,
-      inTop50: u.inTop50,
-      refundEligible: u.refundEligible,
-      refunded: u.refunded,
+      lastRoundOffer: u.lastRoundOffer || u.highestOffer || 0,
+      highestOffer: u.highestOffer || 0,
+      hasQuoted: !!u.hasQuoted,
+      isWithin1Percent: !!u.isWithin1Percent,
+      inTop50: !!u.inTop50,
+      refundEligible: !!u.refundEligible,
+      refunded: !!u.refunded,
     })
   );
 }

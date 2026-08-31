@@ -30,6 +30,16 @@ export function UserHeader() {
     }
   }, [error]);
 
+  useEffect(() => {
+    const handlePageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
   return (
     <header className="fixed top-0 right-0 left-0 lg:left-64 h-16 px-5 lg:px-8 bg-white/90 backdrop-blur-xl border-b border-outline-variant/30 z-40 flex items-center justify-between transition-all">
       {/* Mobile Bar / Brand */}

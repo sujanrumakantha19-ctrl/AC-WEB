@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import Auction from "@/models/Auction";
+import Offer from "@/models/Offer";
 import { ok, badRequest, route, requireAdmin, notFound } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
 import { broadcastAuctionEvent } from "@/lib/auction-ws";
 import { notifyRoundStarted, notifyRoundEnded, notifyAuctionEnded } from "@/lib/round-state-sync";
 
-const VALID_ACTIONS = ["start", "pause", "resume", "end", "cancel"] as const;
+const VALID_ACTIONS = ["start", "pause", "resume", "end", "end_auction", "cancel"] as const;
 
 export const POST = route<{ id: string }>(async (request: NextRequest, { params }) => {
   const auth = await requireAdmin(request);
@@ -22,7 +23,7 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
   if (!auction) return notFound("Auction not found");
 
   if (!auction.roundStates || auction.roundStates.length === 0) {
-    auction.roundStates = Array.from({ length: auction.rounds }, (_, i) => ({
+    auction.roundStates = Array.from({ length: auction.rounds || 1 }, (_, i) => ({
       round: i + 1,
       status: "pending" as const,
       highestOffer: i === 0 ? auction.startingOffer : 0,
@@ -30,7 +31,7 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
     }));
   }
 
-  const roundIdx = auction.currentRound - 1;
+  const roundIdx = (auction.currentRound || 1) - 1;
 
   switch (action) {
     case "start": {
@@ -59,22 +60,40 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
       auction.roundStates[roundIdx].status = "completed";
       auction.roundStates[roundIdx].endedAt = new Date();
 
-      const isLastRound = auction.currentRound >= auction.rounds;
+      const isLastRound = auction.isParkingSale || auction.currentRound >= auction.rounds;
       if (isLastRound) {
         auction.status = "ENDED";
-        auction.winner = auction.roundStates[roundIdx].highestBuyer;
-        auction.winningOffer = auction.roundStates[roundIdx].highestOffer;
+        auction.endTime = new Date();
+
+        // Look up highest offer in the database across all rounds
+        const topOffer = (await Offer.findOne({ auction: id }).sort({ amount: -1 }).lean()) as any;
+        if (topOffer && topOffer.amount > 0) {
+          auction.winner = topOffer.buyer;
+          auction.winningOffer = topOffer.amount;
+          auction.currentOffer = topOffer.amount;
+        } else {
+          auction.winner = auction.roundStates[roundIdx]?.highestBuyer || undefined;
+          auction.winningOffer = auction.roundStates[roundIdx]?.highestOffer || auction.startingOffer;
+        }
 
         await notifyRoundEnded(auction, auction.currentRound);
         await notifyAuctionEnded(auction);
       } else {
         await notifyRoundEnded(auction, auction.currentRound);
+
+        // Find the current overall highest offer/buyer before advancing
+        const topOffer = (await Offer.findOne({ auction: id }).sort({ amount: -1 }).lean()) as any;
+        const prevHighest = topOffer?.amount || auction.roundStates[roundIdx]?.highestOffer || auction.startingOffer;
+        const prevBuyer = topOffer?.buyer || auction.roundStates[roundIdx]?.highestBuyer;
+
         auction.currentRound += 1;
         const nextIdx = auction.currentRound - 1;
-        const prevHighest = auction.roundStates[roundIdx].highestOffer;
-        auction.roundStates[nextIdx].status = "active";
-        auction.roundStates[nextIdx].highestOffer = prevHighest;
-        auction.roundStates[nextIdx].startedAt = new Date();
+        if (auction.roundStates[nextIdx]) {
+          auction.roundStates[nextIdx].status = "active";
+          auction.roundStates[nextIdx].highestOffer = prevHighest;
+          auction.roundStates[nextIdx].highestBuyer = prevBuyer;
+          auction.roundStates[nextIdx].startedAt = new Date();
+        }
 
         const nextRt = auction.roundTimes?.[nextIdx];
         if (nextRt && (!nextRt.start || new Date(nextRt.start) > new Date())) {
@@ -85,10 +104,41 @@ export const POST = route<{ id: string }>(async (request: NextRequest, { params 
       }
       break;
     }
+    case "end_auction": {
+      // Force end entire auction immediately at any round
+      auction.status = "ENDED";
+      auction.endTime = new Date();
+
+      // Mark current and all previous roundStates as completed
+      for (let i = 0; i < (auction.roundStates?.length || 0); i++) {
+        if (auction.roundStates[i].status !== "completed") {
+          auction.roundStates[i].status = "completed";
+          auction.roundStates[i].endedAt = new Date();
+        }
+      }
+
+      // Look up highest offer in the database across all rounds
+      const topOffer = (await Offer.findOne({ auction: id }).sort({ amount: -1 }).lean()) as any;
+      if (topOffer && topOffer.amount > 0) {
+        auction.winner = topOffer.buyer;
+        auction.winningOffer = topOffer.amount;
+        auction.currentOffer = topOffer.amount;
+      } else {
+        auction.winner = undefined;
+        auction.winningOffer = undefined;
+      }
+
+      await notifyRoundEnded(auction, auction.currentRound);
+      await notifyAuctionEnded(auction);
+      break;
+    }
     case "cancel": {
       auction.status = "ENDED";
-      auction.roundStates[roundIdx].status = "completed";
-      auction.roundStates[roundIdx].endedAt = new Date();
+      auction.endTime = new Date();
+      for (let i = 0; i < (auction.roundStates?.length || 0); i++) {
+        auction.roundStates[i].status = "completed";
+        auction.roundStates[i].endedAt = new Date();
+      }
       auction.winner = undefined;
       auction.winningOffer = undefined;
       auction.cancelReason = typeof reason === "string" && reason.trim() ? reason.trim() : undefined;

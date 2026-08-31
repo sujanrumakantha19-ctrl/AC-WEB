@@ -20,18 +20,52 @@ export function DomainAuctionCard({
   description,
 }: DomainAuctionCardProps) {
   const id = auction.id || auction._id;
-  const defaultHref =
-    auction.status === "LIVE" ? `/user/live/${id}` : `/auctions/${id}`;
+  const isParking = !!auction.isParkingSale;
+  const defaultHref = isParking
+    ? `/auctions/${id}`
+    : auction.status === "LIVE"
+    ? `/user/live/${id}`
+    : `/auctions/${id}`;
   const href = targetHref || defaultHref;
-  const buttonText = ctaText || "Offer Now";
+  const buttonText =
+    ctaText ||
+    (isParking
+      ? "Free"
+      : auction.status === "LIVE"
+      ? "Login to Offer"
+      : "View Details");
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+    <div
+      className={`rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group ${
+        isParking
+          ? "bg-purple-50/80 border-2 border-purple-400 shadow-purple-500/10"
+          : "bg-white border border-outline-variant/30"
+      }`}
+    >
       <div className="relative h-48 w-full overflow-hidden bg-black/5">
         <div className="absolute top-2.5 left-2.5 right-2.5 z-10 flex justify-between items-center pointer-events-none">
-          <Badge variant={auction.status === "LIVE" ? "live" : "secondary"} pulse={auction.status === "LIVE"}>
-            {auction.status}
-          </Badge>
+          {isParking ? (
+            <div className="flex items-center gap-1.5">
+              <Badge variant="new" className="!bg-purple-700 !text-white font-extrabold shadow-sm">
+                PARKING SALE
+              </Badge>
+              {auction.status === "LIVE" ? (
+                <Badge variant="live" pulse>
+                  LIVE
+                </Badge>
+              ) : (
+                <Badge variant="warning">UPCOMING</Badge>
+              )}
+            </div>
+          ) : (
+            <Badge
+              variant={auction.status === "LIVE" ? "live" : auction.status === "UPCOMING" ? "warning" : "secondary"}
+              pulse={auction.status === "LIVE"}
+            >
+              {auction.status === "LIVE" ? "LIVE" : auction.status}
+            </Badge>
+          )}
         </div>
 
         <ImageWithGallery
@@ -41,10 +75,12 @@ export function DomainAuctionCard({
           imgClassName="group-hover:scale-105 transition-transform duration-500"
         />
 
-        <div className="absolute bottom-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 pointer-events-none">
-          <span className="material-symbols-outlined text-xs text-emerald-400">verified</span>
-          <span>Score: {auction.inspectionScore ?? 0}/10</span>
-        </div>
+        {typeof auction.inspectionScore === "number" && auction.inspectionScore > 0 && (
+          <div className="absolute bottom-2.5 left-2.5 bg-black/70 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 pointer-events-none">
+            <span className="material-symbols-outlined text-xs text-emerald-400">verified</span>
+            <span>Score: {auction.inspectionScore}/10</span>
+          </div>
+        )}
       </div>
 
       <div className="p-4 flex-1 flex flex-col">
@@ -70,8 +106,10 @@ export function DomainAuctionCard({
             {auction.fuelType && <SpecChip icon="local_gas_station">{auction.fuelType}</SpecChip>}
             {auction.transmission && <SpecChip icon="settings">{auction.transmission}</SpecChip>}
           </div>
-          {description && (
-            <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed mt-2">{description}</p>
+          {(description || auction.description) && (
+            <p className="text-xs text-on-surface-variant line-clamp-2 leading-relaxed mt-2">
+              {description || auction.description}
+            </p>
           )}
         </div>
 
@@ -87,7 +125,11 @@ export function DomainAuctionCard({
           </div>
 
           <Link href={href}>
-            <button className="px-4 py-2 bg-primary hover:bg-secondary text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95">
+            <button
+              className={`px-4 py-2 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 ${
+                isParking ? "bg-purple-700 hover:bg-purple-800" : "bg-primary hover:bg-secondary"
+              }`}
+            >
               {buttonText}
             </button>
           </Link>

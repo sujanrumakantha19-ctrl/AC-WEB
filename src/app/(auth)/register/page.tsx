@@ -138,7 +138,7 @@ export default function RegisterPage() {
       try {
         await login({ email, password }).unwrap();
         setSuccess(true);
-        setTimeout(() => { router.push("/user/dashboard"); }, 2000);
+        setTimeout(() => { window.location.replace("/user/dashboard"); }, 2000);
       } catch {
         setError("Account created but login failed. Please log in manually.");
         setIsLoading(false);

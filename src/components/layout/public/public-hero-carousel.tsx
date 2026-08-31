@@ -117,7 +117,7 @@ export function PublicHero() {
           </p>
 
           <div className="pt-1">
-            <Link href="/login?redirect=/auctions">
+            <Link href="/auctions">
               <button className="px-6 sm:px-8 py-2.5 sm:py-3 bg-white hover:bg-white/90 text-primary font-extrabold text-xs sm:text-sm rounded-xl shadow-lg transition-all active:scale-95">
                 Explore Auctions
               </button>

@@ -8,7 +8,7 @@ export interface NavItem {
 
 export const PUBLIC_NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "Browse Auctions", href: "/login?redirect=/auctions" },
-  { label: "About Us", href: "/#about" },
-  { label: "Contact Us", href: "/#contact" },
+  { label: "Browse Auctions", href: "/auctions" },
+  { label: "Auction Rules", href: "/auction-rules" },
+  { label: "About Us", href: "/about" },
 ];

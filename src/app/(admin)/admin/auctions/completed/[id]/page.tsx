@@ -169,7 +169,7 @@ export default function AdminCompletedAuctionDetailPage() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-extrabold">Refund Summary</h2>
           <span className="text-[10px] font-bold text-outline uppercase tracking-wider">
-            Last round · Top 50% · Offer ≥ 1% of winning offer
+            Quoted · Within 1% of winning offer · Top 50% highest quoters
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">

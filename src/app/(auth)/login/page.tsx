@@ -26,6 +26,16 @@ export default function LoginPage() {
     const redirect = params.get("redirect");
     if (err) setError(err);
     if (redirect) setRedirectTo(redirect);
+
+    // Trap back button so user cannot navigate back into previous dashboard sessions
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +48,7 @@ export default function LoginPage() {
 
       const target =
         data.user.role === "admin" ? "/admin/dashboard" : redirectTo || "/user/dashboard";
-      window.location.href = target;
+      window.location.replace(target);
     } catch (err) {
       setError(errorMessage(err, "Login failed"));
     }

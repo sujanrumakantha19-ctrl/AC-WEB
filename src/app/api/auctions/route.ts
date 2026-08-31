@@ -3,6 +3,7 @@ import Auction from "@/models/Auction";
 import { ok, created, badRequest, route, requireAdmin } from "@/lib/api-helpers";
 import { processAuctionRefunds } from "@/lib/auction-refunds";
 import { isSameMonth, isInNextMonth } from "@/lib/auction-status";
+import { syncAuctionRoundStates } from "@/lib/round-state-sync";
 import { notifyWinnerViaEmail } from "@/lib/winner-notify";
 
 export const GET = route(async (request: NextRequest) => {
@@ -17,94 +18,17 @@ export const GET = route(async (request: NextRequest) => {
 
   const matches: typeof allAuctions = [];
   for (const a of allAuctions) {
-    let newStatus = a.status;
-    let changed = false;
-
-    const firstStart = a.startTime ? new Date(a.startTime) : null;
-    const lastEnd = a.endTime ? new Date(a.endTime) : null;
-    const roundOneStart = a.roundTimes?.[0]?.start ? new Date(a.roundTimes[0].start) : firstStart;
-    const liveStart = roundOneStart && !isNaN(roundOneStart.getTime()) ? roundOneStart : firstStart;
-    if (firstStart && a.status !== "ENDED") {
-      if (a.isParkingSale) {
-        if (liveStart && !isNaN(liveStart.getTime()) && now >= liveStart) newStatus = "LIVE";
-        else newStatus = "UPCOMING";
-      } else if (lastEnd) {
-        if (now > lastEnd) newStatus = "ENDED";
-        else if (isSameMonth(now, liveStart)) newStatus = "LIVE";
-        else newStatus = "UPCOMING";
-      }
+    if (a.status !== "ENDED") {
+      const changed = await syncAuctionRoundStates(a, now);
+      if (changed) await a.save();
     }
 
-    if (newStatus === "LIVE" && a.roundTimes?.length > 0) {
-      if (!a.roundStates || a.roundStates.length === 0) {
-        a.roundStates = Array.from({ length: a.rounds }, (_, i) => ({
-          round: i + 1,
-          status: "pending" as const,
-          highestOffer: i === 0 ? a.startingOffer : 0,
-        }));
-        changed = true;
-      }
-      for (let i = 0; i < a.rounds; i++) {
-        const rs = a.roundStates[i];
-        const rt = a.roundTimes[i];
-        if (!rs || !rt) continue;
-        const rtStart = new Date(rt.start);
-        const rtEnd = new Date(rt.end);
-        if (rs.status === "pending" && now >= rtStart && now < rtEnd) {
-          rs.status = "active";
-          rs.startedAt = now;
-          rs.highestOffer = rs.highestOffer || a.startingOffer;
-          a.currentRound = i + 1;
-          changed = true;
-        } else if (rs.status === "active" && now >= rtEnd) {
-          rs.status = "completed";
-          rs.endedAt = now;
-          const nextRound = a.roundStates[i + 1];
-          if (nextRound) {
-            nextRound.status = "active";
-            nextRound.startedAt = now;
-            nextRound.highestOffer = rs.highestOffer;
-            a.currentRound = i + 2;
-          } else {
-            newStatus = "ENDED";
-            a.winner = rs.highestBuyer;
-            a.winningOffer = rs.highestOffer;
-            a.currentOffer = a.winningOffer || a.currentOffer;
-          }
-          changed = true;
-        }
-      }
-    }
-
-    if (a.status !== newStatus) {
-      a.status = newStatus;
-      if (newStatus === "ENDED") {
-        a.currentOffer = a.winningOffer || a.currentOffer;
-      }
-      changed = true;
-    }
-
-    if (changed) await a.save();
-
-    if (newStatus === "ENDED") {
+    if (a.status === "ENDED") {
       try {
-        const result = await processAuctionRefunds(String(a._id));
-        if (result.failed > 0) {
-          console.error(`[auction-refunds] list route: ${result.failed} refund(s) failed`, a._id);
-        }
+        await processAuctionRefunds(String(a._id));
       } catch (err) {
         console.error("[auction-refunds] list route: failed to process", a._id, err);
       }
-
-      try {
-        await notifyWinnerViaEmail(a);
-      } catch (err) {
-        console.error("[winner-notify] list route: failed to notify winner", a._id, err);
-      }
-    }
-
-    if (newStatus !== "ENDED" && newStatus === "UPCOMING" && !isInNextMonth(now, liveStart)) {
-      continue;
     }
 
     if (parkingSale) {

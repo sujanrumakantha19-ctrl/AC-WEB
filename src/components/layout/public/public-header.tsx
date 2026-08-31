@@ -18,7 +18,6 @@ export function PublicHeader() {
   const user = data?.user || reduxUser;
   const isLoggedIn = !!user;
   const isAdmin = (user as any)?.role === "admin" || (user as any)?.role === "superadmin";
-  const dashboardUrl = isAdmin ? "/admin/dashboard" : "/user/dashboard";
   const profileUrl = isAdmin ? "/admin/profile" : "/user/profile";
 
   return (
@@ -56,22 +55,13 @@ export function PublicHeader() {
         <div className="flex items-center gap-2 sm:gap-3">
           {isLoggedIn ? (
             <div className="flex items-center gap-2 sm:gap-3">
-              <Link href={dashboardUrl}>
-                <button
-                  title="Dashboard"
-                  className="px-2.5 py-2 sm:px-4 sm:py-2 bg-primary hover:bg-secondary text-white text-xs font-bold rounded-xl shadow-xs transition-all active:scale-95 flex items-center gap-1.5"
-                >
-                  <span className="material-symbols-outlined text-base sm:text-sm">dashboard</span>
-                  <span className="hidden sm:inline">Dashboard</span>
-                </button>
-              </Link>
               <Link
                 href={profileUrl}
                 title="My Profile"
-                className="flex items-center gap-2 pl-2 border-l border-outline-variant/30 hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
               >
                 <div className="text-right hidden sm:block">
-                  <p className="text-xs font-bold text-on-surface leading-tight truncate max-w-[120px]">
+                  <p className="text-xs font-bold text-on-surface leading-tight truncate max-w-[140px]">
                     {user?.name || "My Account"}
                   </p>
                   <p className="text-[10px] text-on-surface-variant leading-tight">
@@ -124,16 +114,10 @@ export function PublicHeader() {
           <div className="pt-3 border-t border-outline-variant/20 flex gap-2">
             {isLoggedIn ? (
               <div className="w-full space-y-2">
-                <Link href={dashboardUrl} className="w-full block" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full py-2.5 bg-primary text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
-                    <span className="material-symbols-outlined text-sm">dashboard</span>
-                    Go to Dashboard
-                  </button>
-                </Link>
                 <Link href={profileUrl} className="w-full block" onClick={() => setMobileMenuOpen(false)}>
-                  <button className="w-full py-2 border border-outline-variant/60 rounded-lg text-xs font-bold text-on-surface flex items-center justify-center gap-1.5">
+                  <button className="w-full py-2.5 bg-primary text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
                     <span className="material-symbols-outlined text-sm">person</span>
-                    My Profile
+                    My Account ({user?.name || "Profile"})
                   </button>
                 </Link>
               </div>

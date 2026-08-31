@@ -1,13 +1,26 @@
 import React from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyToken } from "@/lib/auth";
 import { UserSidebar } from "@/components/layout/user/user-sidebar";
 import { UserHeader } from "@/components/layout/user/user-header";
 import { PublicFooter } from "@/components/layout/public/public-footer";
 
-export default function UserAppLayout({
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default async function UserAppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+  const payload = token ? await verifyToken(token) : null;
+
+  if (!payload) {
+    redirect("/login?error=" + encodeURIComponent("Please log in to access your dashboard"));
+  }
   return (
     <div className="flex min-h-screen bg-background text-on-surface overflow-x-hidden">
       {/* Fixed Left Sidebar (w-64) */}

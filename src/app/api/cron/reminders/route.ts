@@ -7,12 +7,26 @@ export const dynamic = "force-dynamic";
 
 export const GET = route(async (request: NextRequest) => {
   const now = new Date();
-  const fifteenMinsFromNow = new Date(now.getTime() + 15 * 60 * 1000);
 
+  // Get current date range in Indian Standard Time (Asia/Kolkata)
+  // or local server date range (00:00:00 to 23:59:59)
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endOfToday = new Date(now);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  // Find all auctions (both regular live auctions & parking sales) that:
+  // 1. Have start time today (or are currently LIVE)
+  // 2. Are not yet ENDED
+  // 3. Haven't had WhatsApp reminder sent yet
   const auctions = await Auction.find({
-    status: "UPCOMING",
+    status: { $ne: "ENDED" },
     reminderSent: { $ne: true },
-    startTime: { $lte: fifteenMinsFromNow, $gte: new Date(now.getTime() - 10 * 60 * 1000) },
+    $or: [
+      { startTime: { $gte: startOfToday, $lte: endOfToday } },
+      { status: "LIVE" },
+    ],
   }).exec();
 
   let sentCount = 0;
@@ -21,5 +35,10 @@ export const GET = route(async (request: NextRequest) => {
     sentCount++;
   }
 
-  return ok({ success: true, processed: sentCount, timestamp: now.toISOString() });
+  return ok({
+    success: true,
+    processed: sentCount,
+    totalMatchingAuctions: auctions.length,
+    timestamp: now.toISOString(),
+  });
 });

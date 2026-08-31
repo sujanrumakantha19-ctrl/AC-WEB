@@ -1,4 +1,5 @@
 import Notification from "@/models/Notification";
+import Offer from "@/models/Offer";
 import { isSameMonth } from "@/lib/auction-status";
 import { notifyAdmins, notifyAuctionParticipants, notifyAllCustomers } from "@/lib/auction-notifications";
 import { notifyWinnerViaEmail } from "@/lib/winner-notify";
@@ -20,6 +21,10 @@ const fmt = (n?: number) => (n ?? 0).toLocaleString("en-IN");
  * only at its start time" rule.
  */
 export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Promise<boolean> {
+  if (!auction || auction.status === "ENDED") {
+    return false;
+  }
+
   const now = nowInput || new Date();
   let changed = false;
 
@@ -28,6 +33,7 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
       round: i + 1,
       status: "pending",
       highestOffer: i === 0 ? auction.startingOffer : 0,
+      highestBuyer: undefined,
       startNotified: false,
       endNotified: false,
     }));
@@ -74,7 +80,10 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
         if (rs.status !== "active" && rs.status !== "paused") {
           rs.status = "active";
           rs.startedAt = rs.startedAt || now;
-          rs.highestOffer = rs.highestOffer || auction.startingOffer;
+          const prevHighest = i > 0 ? auction.roundStates[i - 1]?.highestOffer : auction.startingOffer;
+          const prevBuyer = i > 0 ? auction.roundStates[i - 1]?.highestBuyer : undefined;
+          rs.highestOffer = rs.highestOffer || prevHighest || auction.startingOffer;
+          if (!rs.highestBuyer && prevBuyer) rs.highestBuyer = prevBuyer;
           auction.currentRound = i + 1;
           changed = true;
           await notifyRoundStarted(auction, i + 1);
@@ -93,14 +102,18 @@ export async function syncAuctionRoundStates(auction: any, nowInput?: Date): Pro
     const lastEndMs = new Date(auction.roundTimes[lastRoundIdx]?.end || auction.endTime).getTime();
     if (now.getTime() >= lastEndMs || allCompleted) {
       if (auction.status !== "ENDED") {
-        const lastRs = auction.roundStates[lastRoundIdx];
-        const winnerId =
-          lastRs?.highestBuyer && typeof lastRs.highestBuyer === "object" && lastRs.highestBuyer._id
-            ? lastRs.highestBuyer._id
-            : lastRs?.highestBuyer;
+        // Look up highest offer in database across all rounds
+        const topOffer = (await Offer.findOne({ auction: auction._id }).sort({ amount: -1 }).lean()) as any;
         auction.status = "ENDED";
-        auction.winner = winnerId;
-        auction.winningOffer = lastRs?.highestOffer || auction.currentOffer || auction.startingOffer;
+        if (topOffer && topOffer.amount > 0) {
+          auction.winner = topOffer.buyer;
+          auction.winningOffer = topOffer.amount;
+          auction.currentOffer = topOffer.amount;
+        } else {
+          const lastRs = auction.roundStates[lastRoundIdx];
+          auction.winner = lastRs?.highestBuyer || undefined;
+          auction.winningOffer = lastRs?.highestOffer || auction.startingOffer;
+        }
         changed = true;
         await notifyAuctionEnded(auction);
       }

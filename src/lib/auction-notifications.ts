@@ -83,22 +83,50 @@ export async function notifyAllCustomers(
 }
 
 /**
- * Send WhatsApp reminder messages to all users before an auction starts.
+ * Send WhatsApp reminder messages to all users before/during an auction on the current date.
  */
 export async function sendAuctionWhatsAppReminders(auction: any) {
   try {
     const { sendWhatsAppAuctionReminderMessage } = await import("@/lib/whatsapp");
     const users = await User.find({ role: "user", phone: { $exists: true, $ne: "" } }).lean();
+    
+    // Format start time in Indian Standard Time (IST)
     const startTimeStr = auction.startTime
-      ? new Date(auction.startTime).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
-      : "soon";
+      ? new Date(auction.startTime).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "Today";
+
+    const auctionUrl = auction._id
+      ? `vksautoservices.org/auctions/${auction._id}`
+      : "vksautoservices.org/auctions";
+
+    const auctionTitle = auction.title
+      ? `${auction.title}${auction.isParkingSale ? " (Parking Sale)" : ""}`
+      : "Vehicle Auction";
+
     for (const u of users) {
       if (u.phone) {
-        await sendWhatsAppAuctionReminderMessage(u.name || "Customer", u.phone, auction.title || "Vehicle Auction", startTimeStr);
+        await sendWhatsAppAuctionReminderMessage(
+          u.name || "Customer",
+          u.phone,
+          auctionTitle,
+          startTimeStr,
+          auctionUrl
+        );
       }
     }
+
     const AuctionModel = (await import("@/models/Auction")).default;
-    await AuctionModel.findByIdAndUpdate(auction._id, { reminderSent: true });
+    await AuctionModel.findByIdAndUpdate(auction._id, {
+      reminderSent: true,
+      reminderSentAt: new Date(),
+    });
   } catch (err) {
     console.error("[whatsapp-reminder] Error sending reminders", err);
   }

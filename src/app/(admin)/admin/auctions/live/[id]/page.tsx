@@ -77,7 +77,7 @@ export default function AdminLiveControlRoomPage() {
     setEditingTimes(false);
   };
 
-  const handleAction = async (action: "start" | "pause" | "resume" | "end") => {
+  const handleAction = async (action: "start" | "pause" | "resume" | "end" | "end_auction") => {
     try {
       await roundControl({ id, body: { action } }).unwrap();
     } catch {}
@@ -445,10 +445,23 @@ export default function AdminLiveControlRoomPage() {
                           className="px-5 py-2.5 bg-amber-500 text-black rounded-lg text-xs font-bold hover:bg-amber-400 disabled:opacity-50">
                           ⏸ Pause
                         </button>
-                        <button onClick={() => handleAction("end")} disabled={loading}
-                          className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
-                          ⏹ End Round
-                        </button>
+                        {currentRound < (auction.rounds || 1) ? (
+                          <>
+                            <button onClick={() => handleAction("end")} disabled={loading}
+                              className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                              ⏹ End Round {currentRound}
+                            </button>
+                            <button onClick={() => handleAction("end_auction")} disabled={loading}
+                              className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-50">
+                              🏁 End Entire Auction
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => handleAction("end")} disabled={loading}
+                            className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                            🏁 End Auction (Final Round)
+                          </button>
+                        )}
                         <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
                           className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
                           🛑 Cancel
@@ -461,10 +474,23 @@ export default function AdminLiveControlRoomPage() {
                           className="px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-xs font-bold hover:bg-emerald-600 disabled:opacity-50">
                           ▶ Resume
                         </button>
-                        <button onClick={() => handleAction("end")} disabled={loading}
-                          className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
-                          ⏹ End Round
-                        </button>
+                        {currentRound < (auction.rounds || 1) ? (
+                          <>
+                            <button onClick={() => handleAction("end")} disabled={loading}
+                              className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                              ⏹ End Round {currentRound}
+                            </button>
+                            <button onClick={() => handleAction("end_auction")} disabled={loading}
+                              className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 disabled:opacity-50">
+                              🏁 End Entire Auction
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => handleAction("end")} disabled={loading}
+                            className="px-5 py-2.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-secondary disabled:opacity-50">
+                            🏁 End Auction (Final Round)
+                          </button>
+                        )}
                         <button onClick={() => setCancelPopupOpen(true)} disabled={loading}
                           className="px-5 py-2.5 bg-error text-white rounded-lg text-xs font-bold hover:bg-error/90 disabled:opacity-50">
                           🛑 Cancel

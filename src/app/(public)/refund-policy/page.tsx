@@ -9,23 +9,28 @@ export const metadata = {
 
 const REFUND_ELIGIBILITY_RULES = [
   {
-    title: "Top 50% Highest Offer Customers",
-    body: "Only customers who placed an offer in the final round and ranked within the top 50% of highest offer submitters for that auction are evaluated for a deposit refund.",
+    title: "Active Quoting Required",
+    body: "Only customers who submitted valid quotes during active offering rounds are considered for a refund. Participants who paid the registration fee but placed no quotes do not receive a refund.",
   },
   {
-    title: "1% Winning Offer Threshold",
-    body: "Within the top 50% highest offer submitters, a refund is issued only if the customer's final round offer is at least 1% (≥ 1%) of the declared winning offer price.",
+    title: "Within 1% of Winning Offer Margin",
+    body: "A deposit refund is issued only to non-winning participants whose highest quoted amount is within 1% (≤ 1% difference) of the declared final winning amount.",
+  },
+  {
+    title: "Top 50% Quoters Cap",
+    body: "When all (or multiple) participants quote within the 1% margin of the winning amount, only the top 50% highest quoters among them (ranked by highest quote descending) receive the deposit refund.",
   },
   {
     title: "Unsold / Cancelled Auctions",
-    body: "If an auction concludes without a declared winner or is cancelled by the platform, all paid participants are eligible for the base registration fee refund.",
+    body: "If an auction concludes without any bids or is cancelled by the platform, all paid participants are eligible for the base registration fee refund.",
   },
 ];
 
 const NO_REFUND_RULES = [
   "The customer is declared the winning buyer of the auction.",
-  "The customer's offer is outside the top 50% highest offer list or below the 1% threshold of the winning offer.",
-  "The customer paid the registration fee but did not submit any valid offer during active offering rounds.",
+  "The customer paid the registration fee but did not submit any valid quote during active offering rounds.",
+  "The customer's quote is more than 1% below the final winning offer price.",
+  "The customer's quote ranks outside the top 50% highest quoters when multiple participants qualify under the 1% margin.",
   "The statutory 18% GST portion paid at checkout, which is remitted directly to government tax authorities.",
   "The customer provides false or incomplete registration details.",
 ];

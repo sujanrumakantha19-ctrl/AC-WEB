@@ -53,6 +53,8 @@ export interface IAuction extends Omit<Document, 'model'> {
   refundsProcessed?: boolean;
   winnerNotifiedAt?: Date;
   liveNotified?: boolean;
+  reminderSent?: boolean;
+  reminderSentAt?: Date;
   thresholdAmount?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -116,6 +118,8 @@ const AuctionSchema = new Schema<IAuction>(
     refundsProcessed: { type: Boolean, default: false },
     winnerNotifiedAt: { type: Date },
     liveNotified: { type: Boolean, default: false },
+    reminderSent: { type: Boolean, default: false },
+    reminderSentAt: { type: Date },
     thresholdAmount: { type: Number },
   },
   { timestamps: true }
