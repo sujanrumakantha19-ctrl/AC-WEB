@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { formatINR } from "@/lib/utils";
@@ -8,7 +8,8 @@ import { ImageWithGallery } from "@/components/ui/image-with-gallery";
 import { RoundCountdown } from "@/components/ui/round-countdown";
 import { UpcomingCountdown } from "@/components/ui/upcoming-countdown";
 import { AuctionGridSkeleton } from "@/components/ui/skeleton";
-import { useLazyGetAuctionsQuery, useGetAuctionsQuery } from "@/services/auctions-api";
+import { Pagination } from "@/components/ui/pagination";
+import { useGetAuctionsQuery } from "@/services/auctions-api";
 import { useGetMeQuery } from "@/services/auth-api";
 import { getServerNow } from "@/lib/server-time";
 
@@ -19,18 +20,23 @@ type Tab = "all" | "live" | "parking" | "upcoming";
 export default function UserAuctionsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("all");
-  const [items, setItems] = useState<any[]>([]);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const [getAuctions] = useLazyGetAuctionsQuery();
+  const queryParams = useMemo(() => {
+    return {
+      status: tab === "all" ? undefined : tab === "parking" ? "LIVE" : tab.toUpperCase(),
+      parkingSale: tab === "parking" ? true : undefined,
+      excludeEnded: tab === "all" ? true : undefined,
+      page,
+      limit: PAGE_SIZE,
+    };
+  }, [tab, page]);
+
+  const { data, isLoading } = useGetAuctionsQuery(queryParams);
   const { data: liveCountData } = useGetAuctionsQuery({ status: "LIVE", limit: 1 });
   const { data: upcomingCountData } = useGetAuctionsQuery({ status: "UPCOMING", limit: 1 });
   const { data: parkingCountData } = useGetAuctionsQuery({ parkingSale: true, status: "LIVE", limit: 1 });
-  const { data: allCountData } = useGetAuctionsQuery({ limit: 1 });
+  const { data: allCountData } = useGetAuctionsQuery({ excludeEnded: true, limit: 1 });
   const { data: meData } = useGetMeQuery();
 
   const tabCounts: Record<Tab, number> = {
@@ -47,74 +53,20 @@ export default function UserAuctionsPage() {
 
   useEffect(() => {
     const t = (new URLSearchParams(window.location.search).get("tab") || "").toLowerCase();
-    if (t === "all" || t === "live" || t === "parking" || t === "upcoming") setTab(t as Tab);
+    if (t === "all" || t === "live" || t === "parking" || t === "upcoming") {
+      setTab(t as Tab);
+      setPage(1);
+    }
   }, []);
 
-  const loadPage = useCallback(
-    async (t: Tab, p: number) => {
-      const res = await getAuctions(
-        t === "parking"
-          ? { parkingSale: true, status: "LIVE", limit: PAGE_SIZE, page: p }
-          : t === "all"
-          ? { limit: PAGE_SIZE, page: p }
-          : { status: t.toUpperCase(), limit: PAGE_SIZE, page: p }
-      );
-      return res.data?.auctions || [];
-    },
-    [getAuctions]
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setItems([]);
+  const handleTabChange = (t: Tab) => {
+    setTab(t);
     setPage(1);
-    setHasMore(false);
-    loadPage(tab, 1)
-      .then((list) => {
-        if (cancelled) return;
-        setItems(list);
-        setHasMore(list.length === PAGE_SIZE);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, loadPage]);
+  };
 
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || loading) return;
-    setLoadingMore(true);
-    const nextPage = page + 1;
-    try {
-      const list = await loadPage(tab, nextPage);
-      setItems((prev) => {
-        const seen = new Set(prev.map((i: any) => String(i._id || i.id)));
-        return [...prev, ...list.filter((i: any) => !seen.has(String(i._id || i.id)))];
-      });
-      setPage(nextPage);
-      setHasMore(list.length === PAGE_SIZE);
-    } catch {
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, hasMore, loading, page, tab, loadPage]);
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || !hasMore) return;
-    const obs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) loadMore();
-      },
-      { rootMargin: "300px" }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [hasMore, loadingMore, loading, page, tab, loadMore]);
+  const auctions = data?.auctions || [];
+  const totalItems = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
 
   const renderCard = (a: any) => {
     const id = a._id || a.id;
@@ -304,9 +256,9 @@ export default function UserAuctionsPage() {
             <button
               key={t}
               type="button"
-              onClick={() => setTab(t)}
+              onClick={() => handleTabChange(t)}
               className={[
-                "px-5 py-2 rounded-lg text-xs font-bold transition-all",
+                "px-5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer",
                 tab === t ? "bg-primary text-white shadow-xs" : "text-on-surface-variant hover:text-on-surface",
               ].join(" ")}
             >
@@ -317,9 +269,9 @@ export default function UserAuctionsPage() {
         </div>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <AuctionGridSkeleton count={6} />
-      ) : items.length === 0 ? (
+      ) : auctions.length === 0 ? (
         <div className="text-center py-16">
           <span className="material-symbols-outlined text-5xl text-outline">directions_car</span>
           <p className="mt-3 text-sm font-bold text-on-surface">No {tab} auctions right now</p>
@@ -330,19 +282,23 @@ export default function UserAuctionsPage() {
           </p>
         </div>
       ) : (
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {items.map((a: any) => renderCard(a))}
-        </section>
-      )}
+        <>
+          <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {auctions.map((a: any) => renderCard(a))}
+          </section>
 
-      <div ref={sentinelRef} className="flex justify-center py-4">
-        {loadingMore && (
-          <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            Loading more...
-          </div>
-        )}
-      </div>
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={PAGE_SIZE}
+            onPageChange={(newPage) => {
+              setPage(newPage);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

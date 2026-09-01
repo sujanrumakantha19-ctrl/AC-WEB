@@ -14,6 +14,8 @@ export interface AuctionListParams {
   parkingSale?: boolean;
   limit?: number;
   page?: number;
+  search?: string;
+  excludeEnded?: boolean;
 }
 
 export interface RoundStateResult {

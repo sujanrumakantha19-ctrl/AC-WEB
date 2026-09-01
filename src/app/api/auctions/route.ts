@@ -10,6 +10,8 @@ export const GET = route(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const parkingSale = searchParams.get("parkingSale") === "true";
+  const search = searchParams.get("search")?.toLowerCase().trim();
+  const excludeEnded = searchParams.get("excludeEnded") === "true";
   const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "50") || 50, 1), 100);
   const page = Math.max(parseInt(searchParams.get("page") || "1") || 1, 1);
 
@@ -31,6 +33,8 @@ export const GET = route(async (request: NextRequest) => {
       }
     }
 
+    if (excludeEnded && a.status === "ENDED") continue;
+
     if (parkingSale) {
       if (!a.isParkingSale) continue;
       if (!status && a.status !== "LIVE") continue;
@@ -38,16 +42,29 @@ export const GET = route(async (request: NextRequest) => {
       if (a.isParkingSale) continue;
     }
 
-    if (!status || a.status === status) {
-      matches.push(a);
+    if (status && a.status !== status) {
+      continue;
     }
+
+    if (search) {
+      const matchesSearch =
+        (a.title && a.title.toLowerCase().includes(search)) ||
+        (a.lotNumber && a.lotNumber.toLowerCase().includes(search)) ||
+        (a.make && a.make.toLowerCase().includes(search)) ||
+        (a.model && a.model.toLowerCase().includes(search)) ||
+        (a.location && a.location.toLowerCase().includes(search));
+      if (!matchesSearch) continue;
+    }
+
+    matches.push(a);
   }
 
   const total = matches.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
   const start = (page - 1) * limit;
   const auctions = matches.slice(start, start + limit);
 
-  return ok({ auctions, total, page, totalPages: Math.ceil(total / limit) });
+  return ok({ auctions, total, page, totalPages, limit });
 });
 
 async function generateLotNumber(): Promise<string> {
