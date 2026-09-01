@@ -40,7 +40,7 @@ const AuctionSchema = new mongoose.Schema({
   make: { type: String, required: true },
   model: { type: String, required: true },
   year: { type: Number, required: true },
-  variant: { type: String, required: true },
+  variant: { type: String, default: "" },
   fuelType: { type: String, enum: ["Diesel", "Petrol", "Hybrid", "EV"], required: true },
   transmission: { type: String, enum: ["Automatic", "Manual"], required: true },
   mileage: { type: Number, required: true },

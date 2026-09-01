@@ -41,9 +41,13 @@ export default function RegistrationFeePaymentPage() {
   const razorpayLoaded = useRef(false);
 
   useEffect(() => {
-    const redirect = new URLSearchParams(window.location.search).get("redirect");
-    if (redirect) {
-      const id = redirect.split("/").pop() || "";
+    const params = new URLSearchParams(window.location.search);
+    const auctionIdParam = params.get("auctionId") || params.get("id");
+    const redirectParam = params.get("redirect");
+    if (auctionIdParam) {
+      setAuctionId(auctionIdParam);
+    } else if (redirectParam) {
+      const id = redirectParam.split("/").filter(Boolean).pop() || "";
       setAuctionId(id);
     }
   }, []);
@@ -103,6 +107,11 @@ export default function RegistrationFeePaymentPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ auctionId }),
         });
+        if (orderRes.status === 401) {
+          setIsProcessing(false);
+          router.push(`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+          return;
+        }
         orderData = await orderRes.json();
       } catch {
         orderData = {};

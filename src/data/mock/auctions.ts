@@ -4,7 +4,7 @@ export interface AuctionItem {
   make: string;
   model: string;
   year: number;
-  variant: string;
+  variant?: string;
   fuelType: 'Diesel' | 'Petrol' | 'Hybrid' | 'EV';
   transmission: 'Automatic' | 'Manual';
   mileage: number;

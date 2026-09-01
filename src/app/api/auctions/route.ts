@@ -67,6 +67,7 @@ export const POST = route(async (request: NextRequest) => {
   if (auth instanceof Response) return auth;
 
   const body = await request.json();
+  body.variant = typeof body.variant === "string" ? body.variant.trim() : "";
   body.lotNumber = await generateLotNumber();
 
   const invalidAmount = ["startingOffer", "registrationFee", "offerUnlockFee", "thresholdAmount"].find(

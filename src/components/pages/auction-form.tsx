@@ -245,7 +245,7 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
       make,
       model,
       year: parseInt(year),
-      variant,
+      variant: variant.trim() || "",
       fuelType,
       transmission,
       mileage: parseInt(mileage),
@@ -400,6 +400,29 @@ export default function AuctionForm({ auctionId }: { auctionId?: string }) {
                       </p>
                     )}
                   </div>
+
+                  {isEdit && auction?.createdAt && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs font-bold text-on-surface-variant">Created Date</label>
+                      <input
+                        className="h-10 rounded-xl px-3 text-xs font-medium text-on-surface-variant bg-surface-container-low border border-outline-variant/30 cursor-not-allowed"
+                        type="text"
+                        value={new Date(auction.createdAt).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })}
+                        disabled
+                        readOnly
+                      />
+                      <p className="text-[10px] text-outline">
+                        Auction creation timestamp (non-editable).
+                      </p>
+                    </div>
+                  )}
 
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold text-on-surface-variant">Manufacturing Year <span className="text-error">*</span></label>

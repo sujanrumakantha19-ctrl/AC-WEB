@@ -102,9 +102,13 @@ export async function sendAuctionWhatsAppReminders(auction: any) {
         })
       : "Today";
 
-    const auctionUrl = auction._id
+    // Use WhatsApp group link if available on the auction, otherwise fallback to the website auction page
+    const groupLink = auction.whatsappGroupLink
+      || (Array.isArray(auction.whatsappGroups) && auction.whatsappGroups.length > 0 && auction.whatsappGroups[0]?.link ? auction.whatsappGroups[0].link : "");
+
+    const auctionUrl = groupLink || (auction._id
       ? `vksautoservices.org/auctions/${auction._id}`
-      : "vksautoservices.org/auctions";
+      : "vksautoservices.org/auctions");
 
     const auctionTitle = auction.title
       ? `${auction.title}${auction.isParkingSale ? " (Parking Sale)" : ""}`

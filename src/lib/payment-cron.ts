@@ -1,6 +1,7 @@
 import { syncPendingPayments, syncRefundSettlements } from "@/lib/razorpay-sync";
 import Auction from "@/models/Auction";
 import { sendAuctionWhatsAppReminders } from "@/lib/auction-notifications";
+import { getISTDayRange } from "@/lib/auction-status";
 
 const CRON_INTERVAL_MS = 15 * 60 * 1000;
 
@@ -25,18 +26,12 @@ export function startPaymentStatusCron(): void {
 
     try {
       const now = new Date();
-      const startOfToday = new Date(now);
-      startOfToday.setHours(0, 0, 0, 0);
-      const endOfToday = new Date(now);
-      endOfToday.setHours(23, 59, 59, 999);
+      const { startOfToday, endOfToday } = getISTDayRange(now);
 
       const auctions = await Auction.find({
         status: { $ne: "ENDED" },
         reminderSent: { $ne: true },
-        $or: [
-          { startTime: { $gte: startOfToday, $lte: endOfToday } },
-          { status: "LIVE" },
-        ],
+        startTime: { $gte: startOfToday, $lte: endOfToday },
       }).exec();
 
       for (const auction of auctions) {

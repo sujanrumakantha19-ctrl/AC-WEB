@@ -87,7 +87,10 @@ export async function sendWhatsAppAuctionReminderMessage(
   const language = process.env.CHATMITRA_REMINDER_TEMPLATE_LANGUAGE || "en_US";
   const firstName = name.trim().split(/\s+/)[0] || name;
 
-  const cleanUrl = auctionUrl.trim().replace(/^https?:\/\//i, "");
+  let cleanUrl = "vksautoservices.org/auctions";
+  if (auctionUrl) {
+    cleanUrl = auctionUrl.split("?")[0].replace(/^https?:\/\//i, "").trim() || "vksautoservices.org/auctions";
+  }
 
   const parameters = [
     { type: "text", text: firstName },

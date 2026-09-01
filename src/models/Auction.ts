@@ -5,7 +5,7 @@ export interface IAuction extends Omit<Document, 'model'> {
   make: string;
   model: string;
   year: number;
-  variant: string;
+  variant?: string;
   fuelType: "Diesel" | "Petrol" | "Hybrid" | "EV";
   transmission: "Automatic" | "Manual";
   mileage: number;
@@ -66,7 +66,7 @@ const AuctionSchema = new Schema<IAuction>(
     make: { type: String, required: true },
     model: { type: String, required: true },
     year: { type: Number, required: true },
-    variant: { type: String, required: true },
+    variant: { type: String, default: "" },
     fuelType: { type: String, enum: ["Diesel", "Petrol", "Hybrid", "EV"], required: true },
     transmission: { type: String, enum: ["Automatic", "Manual"], required: true },
     mileage: { type: Number, required: true },
@@ -124,5 +124,9 @@ const AuctionSchema = new Schema<IAuction>(
   },
   { timestamps: true }
 );
+
+if (mongoose.models && mongoose.models.Auction) {
+  delete (mongoose.models as any).Auction;
+}
 
 export default mongoose.models.Auction || mongoose.model<IAuction>("Auction", AuctionSchema);

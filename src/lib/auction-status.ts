@@ -13,3 +13,17 @@ export function isInNextMonth(now: Date | string, start: Date | string | null | 
   const startMonthIndex = dStart.getFullYear() * 12 + dStart.getMonth();
   return startMonthIndex === nowMonthIndex + 1;
 }
+
+export function getISTDayRange(date = new Date()) {
+  const istDateStr = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+
+  const startOfToday = new Date(`${istDateStr}T00:00:00.000+05:30`);
+  const endOfToday = new Date(`${istDateStr}T23:59:59.999+05:30`);
+
+  return { startOfToday, endOfToday };
+}

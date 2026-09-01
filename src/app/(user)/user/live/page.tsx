@@ -103,7 +103,7 @@ export default function UserLiveAuctionsOverviewPage() {
             <span className="text-xs font-bold text-primary">Live Auction</span>
             <Link href={`/user/live/${id}`}>
               <button className="bg-primary text-white text-xs px-4 py-1.5 rounded-lg font-bold hover:bg-secondary transition-colors shadow-xs">
-                Place Offer
+                Participate
               </button>
             </Link>
           </div>

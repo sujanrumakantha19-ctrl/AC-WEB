@@ -222,7 +222,7 @@ export function AuctionDetailsClient({ id }: { id: string }) {
                   onClick={() => router.push(`/user/live/${id}`)}
                   className="w-full py-3 bg-primary hover:bg-secondary text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
                 >
-                  Place Offer
+                  Participate
                 </button>
               ) : (
                 <button
@@ -238,7 +238,7 @@ export function AuctionDetailsClient({ id }: { id: string }) {
                 onClick={() => router.push(`/register/payment?redirect=/user/live/${id}`)}
                 className="w-full py-3 bg-primary hover:bg-secondary text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
               >
-                {isLive ? "Participate" : "Register"}
+                Register
               </button>
             )}
           </div>

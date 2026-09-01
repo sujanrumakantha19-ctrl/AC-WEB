@@ -254,14 +254,14 @@ export default function CustomerDashboardPage() {
                             onClick={(e) => { e.stopPropagation(); router.push(`/user/live/${car.id}`); }}
                             className="bg-primary text-white text-xs px-4 py-1.5 rounded-lg font-bold hover:bg-secondary transition-colors shadow-xs"
                           >
-                            Place Offer
+                            Participate
                           </button>
                         ) : (
                           <button
                             onClick={(e) => { e.stopPropagation(); router.push(`/register/payment?redirect=/user/live/${car.id}`); }}
                             className="bg-primary text-white text-xs px-4 py-1.5 rounded-lg font-bold hover:bg-secondary transition-colors shadow-xs"
                           >
-                            Participate
+                            Register
                           </button>
                         )}
                       </div>

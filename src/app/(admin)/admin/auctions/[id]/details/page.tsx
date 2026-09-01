@@ -188,6 +188,12 @@ export default function AdminAuctionDetailsPage() {
                 <span className="material-symbols-outlined text-xs">location_on</span>
                 {auction.location}
               </span>
+              {auction.createdAt && (
+                <span className="bg-surface-container-low px-2 py-0.5 rounded-md flex items-center gap-1" title="Auction Created Date">
+                  <span className="material-symbols-outlined text-xs">calendar_today</span>
+                  Created: {new Date(auction.createdAt).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}
+                </span>
+              )}
             </div>
             {auction.description && (
               <p className="text-xs text-on-surface-variant leading-relaxed mt-2">{auction.description}</p>
@@ -217,6 +223,21 @@ export default function AdminAuctionDetailsPage() {
               <div>
                 <p className="text-xs font-bold text-outline uppercase tracking-wider">Reg. Fee</p>
                 <p className="text-base font-bold text-on-surface">{isParkingSale ? "N/A (Free)" : formatINR(auction.registrationFee || 0)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-outline uppercase tracking-wider">Created Date</p>
+                <p className="text-sm font-bold text-on-surface">
+                  {auction.createdAt
+                    ? new Date(auction.createdAt).toLocaleString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })
+                    : "—"}
+                </p>
               </div>
               {!isUpcoming && (
                 <div

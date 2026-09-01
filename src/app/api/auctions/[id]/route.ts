@@ -51,6 +51,9 @@ export const PUT = route<{ id: string }>(async (request: NextRequest, { params }
 
   const { id } = await params;
   const body = await request.json();
+  if (body.variant !== undefined) {
+    body.variant = typeof body.variant === "string" ? body.variant.trim() : "";
+  }
 
   const invalidAmount = ["startingOffer", "registrationFee", "offerUnlockFee", "thresholdAmount"].find(
     (f) => typeof body[f] === "number" && (!Number.isFinite(body[f]) || body[f] < 0 || !Number.isInteger(body[f]))
